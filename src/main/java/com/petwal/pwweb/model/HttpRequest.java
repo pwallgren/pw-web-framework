@@ -50,32 +50,27 @@ public class HttpRequest {
         private Map<String, String> headers;
         private String body;
 
-        public Builder method(String method) {
+        public Builder method(final String method) {
             this.method = method;
             return this;
         }
 
-        public Builder uri(String uri) {
+        public Builder uri(final String uri) {
             this.uri = uri;
             return this;
         }
 
-        public Builder version(String version) {
+        public Builder version(final String version) {
             this.version = version;
             return this;
         }
 
-        public Builder headers(Map<String, String> headers) {
+        public Builder headers(final Map<String, String> headers) {
             this.headers = headers;
             return this;
         }
 
-        public Builder addHeader(String name, String value) {
-            this.headers.put(name, value);
-            return this;
-        }
-
-        public Builder body(String body) {
+        public Builder body(final String body) {
             this.body = body;
             return this;
         }
