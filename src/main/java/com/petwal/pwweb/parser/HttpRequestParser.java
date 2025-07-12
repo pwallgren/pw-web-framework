@@ -19,7 +19,16 @@ public class HttpRequestParser {
     }
 
     public static HttpRequest parse(final BufferedReader reader) throws IOException {
-        final String[] parts = getRequestParts(reader.readLine());
+        final String requestLine = reader.readLine();
+        if (requestLine == null || requestLine.isEmpty()) {
+            return null;
+        }
+
+        final String[] parts = requestLine.split(SPACE);
+        if (parts.length != 3) {
+            return null;
+        }
+
         final String method = parts[0];
         final String uri = parts[1];
         final String version = parts[2];

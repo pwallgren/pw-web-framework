@@ -5,6 +5,8 @@ import com.petwal.pwweb.annotation.PwRoute;
 import com.petwal.pwweb.model.HttpRequest;
 import com.petwal.pwweb.model.HttpResponse;
 
+import java.util.Map;
+
 @PwController
 public class TestController {
 
@@ -12,7 +14,13 @@ public class TestController {
     public HttpResponse getTest(final HttpRequest request) {
         return HttpResponse.builder()
                 .statusCode(200)
-                .body("This is the test response body")
+                .statusMessage("OK")
+                .body("""
+                        {
+                            "name": "petter"
+                        }
+                        """)
+                .headers(Map.of("Content-Type", "application/json"))
                 .build();
     }
 }
