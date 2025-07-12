@@ -8,16 +8,29 @@ import com.petwal.pwweb.model.HandlerMethod;
 import com.petwal.pwweb.model.HttpRequest;
 import com.petwal.pwweb.model.HttpResponse;
 import com.petwal.pwweb.parser.HttpRequestParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static java.util.concurrent.CompletableFuture.runAsync;
 
 public class WebServer {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebServer.class);
+    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(10, 200, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(1000));
     public static final String HTTP_1_1 = "HTTP/1.1";
+    public static final String CRLF = "\r\n";
+
     private Map<String, HandlerMethod> routes;
 
     public WebServer() {
@@ -26,32 +39,33 @@ public class WebServer {
 
     public void start(final int port, final String controllersPath) throws Exception {
         routes = RouteRegistry.register(controllersPath);
+        final String pathString = routes.entrySet()
+                .stream()
+                .map(entry -> entry.getKey() + " " + entry.getValue())
+                .collect(Collectors.joining());
+        LOGGER.info("Starting up server on port {} with routes: {}", port, pathString);
+
         try (final ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
-                Socket socket = null;
-                BufferedReader inputStream = null;
-                BufferedWriter outputStream = null;
-                try {
-                    socket = serverSocket.accept();
-                    inputStream = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                Socket socket = serverSocket.accept();
+                runAsync(() -> {
+                    BufferedReader inputStream = null;
+                    BufferedWriter outputStream = null;
+                    try {
+                        inputStream = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                        outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
-                    final HttpRequest request = parseRequest(inputStream);
-                    final HandlerMethod handlerMethod = getHandlerMethod(request);
-                    final HttpResponse response = handlerMethod.invoke(request);
+                        final HttpRequest request = parseRequest(inputStream);
+                        final HandlerMethod handlerMethod = getHandlerMethod(request);
+                        final HttpResponse response = handlerMethod.invoke(request);
 
-                    sendResponse(response, outputStream);
-                } catch (Exception ex) {
-                    System.out.println("Exception encountered: " + ex);
-                    final HttpResponse response = ExceptionHandler.handle(ex);
-                    if (outputStream != null) {
                         sendResponse(response, outputStream);
+                    } catch (Exception ex) {
+                        handleExceptions(ex, outputStream);
+                    } finally {
+                        closeStreams(inputStream, outputStream, socket);
                     }
-                } finally {
-                    if (inputStream != null) inputStream.close();
-                    if (outputStream != null) outputStream.close();
-                    if (socket != null) socket.close();
-                }
+                }, EXECUTOR);
             }
 
         }
@@ -59,9 +73,9 @@ public class WebServer {
     }
 
     private HandlerMethod getHandlerMethod(final HttpRequest request) throws NotFoundException {
-        final HandlerMethod handlerMethod = routes.get(toRouteKey(request.getMethod(), request.getUri()));
+        final HandlerMethod handlerMethod = routes.get(RouteRegistry.getRouteKey(request.getMethod(), request.getUri()));
         if (handlerMethod == null) {
-            throw new NotFoundException("Handler method for route not found");
+            throw new NotFoundException("Handler method for request not found");
         }
         return handlerMethod;
     }
@@ -74,21 +88,46 @@ public class WebServer {
         return request;
     }
 
-    public void sendResponse(final HttpResponse response, final BufferedWriter out) throws IOException {
-        out.write(HTTP_1_1 + " " + response.getStatusCode() + " " + response.getStatusMessage() + "\r\n");
+    public void sendResponse(final HttpResponse response, final BufferedWriter outputStream) throws IOException {
+        outputStream.write(HTTP_1_1 + " " + response.getStatusCode() + " " + response.getStatusMessage() + CRLF);
         if (response.getHeaders() != null) {
             for (Map.Entry<String, String> header : response.getHeaders().entrySet()) {
-                out.write(header.getKey() + ": " + header.getValue() + "\r\n");
+                outputStream.write(header.getKey() + ": " + header.getValue() + CRLF);
             }
         }
-        out.write("\r\n");
+        outputStream.write(CRLF);
         if (response.getBody() != null) {
-            out.write(response.getBody());
+            outputStream.write(response.getBody());
         }
-        out.flush();
+        outputStream.flush();
     }
 
-    private static String toRouteKey(final String method, final String path) {
-        return method.toUpperCase() + " " + path;
+    private void handleExceptions(final Exception e, final BufferedWriter outputStream) {
+        LOGGER.error("Exception encountered: {} ", e.getMessage());
+        if (outputStream != null) {
+            try {
+                sendResponse(ExceptionHandler.handle(e), outputStream);
+            } catch (IOException e2) {
+                throw new RuntimeException(e2);
+            }
+        }
+    }
+
+    private static void closeStreams(final BufferedReader inputStream, final BufferedWriter outputStream, final Socket socket) {
+        try {
+            if (inputStream != null) inputStream.close();
+        } catch (IOException e) {
+            LOGGER.error("Failed to close input: {} ", e.getMessage());
+        }
+        try {
+            if (outputStream != null) outputStream.close();
+        } catch (IOException e) {
+            LOGGER.error("Failed to close output: {} ", e.getMessage());
+        }
+        try {
+            if (socket != null) socket.close();
+        } catch (IOException e) {
+            LOGGER.error("Failed to close socket: {} ", e.getMessage());
+        }
     }
 }

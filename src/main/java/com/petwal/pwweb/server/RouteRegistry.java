@@ -12,6 +12,8 @@ import java.util.Set;
 
 public class RouteRegistry {
 
+    public static final String SPACE = " ";
+
     public static Map<String, HandlerMethod> register(final String controllersPath) {
         final Map<String, HandlerMethod> routes = new HashMap<>();
         final Reflections reflections = new Reflections(controllersPath);
@@ -37,7 +39,7 @@ public class RouteRegistry {
     }
 
     public static String getRouteKey(final String httpMethod, final String path) {
-        return httpMethod.toUpperCase() + " " + path;
+        return httpMethod.toUpperCase() + SPACE + path;
     }
 
 }
