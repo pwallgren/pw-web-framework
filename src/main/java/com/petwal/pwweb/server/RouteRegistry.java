@@ -1,21 +1,25 @@
 package com.petwal.pwweb.server;
 
 import com.petwal.pwweb.annotation.PwController;
+import com.petwal.pwweb.annotation.PwPath;
+import com.petwal.pwweb.annotation.PwQuery;
 import com.petwal.pwweb.annotation.PwRoute;
 import com.petwal.pwweb.model.HandlerMethod;
+import com.petwal.pwweb.model.ParameterMeta;
+import com.petwal.pwweb.model.RouteEntry;
+import com.petwal.pwweb.model.RoutePattern;
 import org.reflections.Reflections;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.lang.reflect.Parameter;
+import java.util.*;
 
 public class RouteRegistry {
 
     public static final String SPACE = " ";
 
-    public static Map<String, HandlerMethod> register(final String controllersPath) {
-        final Map<String, HandlerMethod> routes = new HashMap<>();
+    public static List<RouteEntry> register(final String controllersPath) {
+        final List<RouteEntry> routes = new ArrayList<>();
         final Reflections reflections = new Reflections(controllersPath);
 
         final Set<Class<?>> controllerClasses = reflections.getTypesAnnotatedWith(PwController.class);
@@ -26,8 +30,30 @@ public class RouteRegistry {
                     for (Method method : clazz.getDeclaredMethods()) {
                         final PwRoute route = method.getAnnotation(PwRoute.class);
                         if (route != null) {
-                            final String key = getRouteKey(route.method(), route.path());
-                            routes.put(key, HandlerMethod.of(instance, method));
+                            // Build parameter metadata
+                            List<ParameterMeta> parameterMetaList = new ArrayList<>();
+                            Parameter[] parameters = method.getParameters();
+                            for (Parameter parameter : parameters) {
+                                final PwPath pathAnnotation = parameter.getAnnotation(PwPath.class);
+                                final PwQuery queryAnnotation = parameter.getAnnotation(PwQuery.class);
+                                if (pathAnnotation != null) {
+                                    final String name = pathAnnotation.value().isEmpty()
+                                            ? parameter.getName()
+                                            : pathAnnotation.value();
+                                    parameterMetaList.add(ParameterMeta.path(name, parameter.getType()));
+                                } else if (queryAnnotation != null) {
+                                    final String name = queryAnnotation.value().isEmpty()
+                                            ? parameter.getName()
+                                            : queryAnnotation.value();
+                                    parameterMetaList.add(ParameterMeta.query(name, parameter.getType()));
+                                }
+                            }
+
+                            routes.add(RouteEntry.builder()
+                                    .httpMethod(route.method())
+                                    .uri(new RoutePattern(route.path()))
+                                    .handlerMethod(HandlerMethod.of(instance, method, parameterMetaList))
+                                    .build());
                         }
                     }
                 } catch (Exception e) {
@@ -36,10 +62,6 @@ public class RouteRegistry {
             }
         }
         return routes;
-    }
-
-    public static String getRouteKey(final String httpMethod, final String path) {
-        return httpMethod.toUpperCase() + SPACE + path;
     }
 
 }

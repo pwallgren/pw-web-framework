@@ -6,8 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface PwRoute {
-    String path();
-    String method();
+@Target(ElementType.PARAMETER)
+public @interface PwQuery {
+    String value() default "";
 }

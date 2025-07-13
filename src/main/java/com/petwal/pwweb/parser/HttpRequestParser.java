@@ -5,6 +5,7 @@ import com.petwal.pwweb.model.HttpRequest;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
@@ -14,6 +15,9 @@ public class HttpRequestParser {
     public static final String SPACE = " ";
     public static final String COLON = ":";
     public static final String CONTENT_LENGTH = "Content-Length";
+    public static final char QUESTION_MARK = '?';
+    public static final String AMPERSAND = "&";
+    public static final String EQUALS = "=";
 
     private HttpRequestParser() {
     }
@@ -34,7 +38,7 @@ public class HttpRequestParser {
         final String version = parts[2];
 
         final Map<String, String> headers = getHeaders(reader);
-
+        final Map<String, String> queryParams = getQueryParams(uri);
         final String body = getBody(reader, headers);
 
         return HttpRequest.builder()
@@ -42,6 +46,7 @@ public class HttpRequestParser {
                 .uri(uri)
                 .version(version)
                 .headers(headers)
+                .queryParams(queryParams)
                 .body(body)
                 .build();
 
@@ -60,22 +65,24 @@ public class HttpRequestParser {
         return null;
     }
 
-    private static String[] getRequestParts(final String requestLine) {
-        final String[] parts = requestLine.split(SPACE);
-        final int length = parts.length;
-        if (length != 3) {
-            throw new IllegalStateException("Request line does not contain the required parts. Shoud be 3, but was " + length);
-        }
-
-        return parts;
-    }
-
     private static Map<String, String> getHeaders(final BufferedReader reader) throws IOException {
         return reader.lines()
                 .takeWhile(line -> !line.isEmpty())
                 .filter(line -> line.indexOf(COLON) > 0)
                 .map(HttpRequestParser::toKeyVal)
                 .collect(toMap(KeyVal::key, KeyVal::val, (v1, v2) -> v1));
+    }
+
+    private static Map<String, String> getQueryParams(final String uri) {
+        long count = uri.chars().filter(ch -> ch == QUESTION_MARK).count();
+        if (count > 1) {
+            throw new IllegalStateException("uri contains more then one question mark (?)");
+        }
+
+        final String queryString = uri.substring(uri.indexOf(QUESTION_MARK));
+        return Arrays.stream(queryString.substring(1).split(AMPERSAND))
+                .map(query -> query.split(EQUALS))
+                .collect(toMap(parts -> parts[0], parts -> parts[1]));
     }
 
     private static KeyVal toKeyVal(final String line) {

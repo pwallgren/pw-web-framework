@@ -4,9 +4,9 @@ package com.petwal.pwweb.server;
 import com.petwal.pwweb.exceptions.ExceptionHandler;
 import com.petwal.pwweb.exceptions.model.BadRequestException;
 import com.petwal.pwweb.exceptions.model.NotFoundException;
-import com.petwal.pwweb.model.HandlerMethod;
 import com.petwal.pwweb.model.HttpRequest;
 import com.petwal.pwweb.model.HttpResponse;
+import com.petwal.pwweb.model.RouteEntry;
 import com.petwal.pwweb.parser.HttpRequestParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,19 +32,18 @@ public class WebServer {
     public static final String HTTP_1_1 = "HTTP/1.1";
     public static final String CRLF = "\r\n";
 
-    private Map<String, HandlerMethod> routes;
+    private List<RouteEntry> routeEntries;
 
     public WebServer() {
-        this.routes = new HashMap<>();
+        this.routeEntries = new ArrayList<>();
     }
 
     public void start(final int port, final String controllersPath) throws Exception {
-        routes = RouteRegistry.register(controllersPath);
-        final String pathString = routes.entrySet()
-                .stream()
-                .map(entry -> entry.getKey() + " " + entry.getValue())
-                .collect(Collectors.joining());
-        LOGGER.info("Starting up server on port {} with routes: {}", port, pathString);
+        routeEntries = RouteRegistry.register(controllersPath);
+        final String routeString = routeEntries.stream()
+                .map(route -> route.getPattern().getOriginalPattern())
+                .collect(Collectors.joining(", "));
+        LOGGER.info("Starting up server on port {}. Registered routes: {}", port, routeString);
 
         try (final ServerSocket serverSocket = new ServerSocket(port)) {
             while (true) {
@@ -56,8 +56,8 @@ public class WebServer {
                         outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
                         final HttpRequest request = parseRequest(inputStream);
-                        final HandlerMethod handlerMethod = getHandlerMethod(request);
-                        final HttpResponse response = handlerMethod.invoke(request);
+                        final RouteEntry routeEntry = getRouteEntry(request);
+                        final HttpResponse response = routeEntry.invokeHandler(request);
 
                         sendResponse(response, outputStream);
                     } catch (Exception ex) {
@@ -67,20 +67,18 @@ public class WebServer {
                     }
                 }, EXECUTOR);
             }
-
         }
-
     }
 
-    private HandlerMethod getHandlerMethod(final HttpRequest request) throws NotFoundException {
-        final HandlerMethod handlerMethod = routes.get(RouteRegistry.getRouteKey(request.getMethod(), request.getUri()));
-        if (handlerMethod == null) {
-            throw new NotFoundException("Handler method for request not found");
-        }
-        return handlerMethod;
+    private RouteEntry getRouteEntry(final HttpRequest request) throws NotFoundException {
+        return routeEntries.stream()
+                .filter(entry -> entry.getHttpMethod().equalsIgnoreCase(request.getMethod()))
+                .filter(route -> route.getPattern().match(request.getPath()))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Handler method for request not found"));
     }
 
-    public HttpRequest parseRequest(final BufferedReader inputStream) throws IOException, BadRequestException {
+    private HttpRequest parseRequest(final BufferedReader inputStream) throws IOException, BadRequestException {
         final HttpRequest request = HttpRequestParser.parse(inputStream);
         if (request == null) {
             throw new BadRequestException("Invalid request");
@@ -104,12 +102,10 @@ public class WebServer {
 
     private void handleExceptions(final Exception e, final BufferedWriter outputStream) {
         LOGGER.error("Exception encountered: {} ", e.getMessage());
-        if (outputStream != null) {
-            try {
-                sendResponse(ExceptionHandler.handle(e), outputStream);
-            } catch (IOException e2) {
-                throw new RuntimeException(e2);
-            }
+        try {
+            sendResponse(ExceptionHandler.handle(e), outputStream);
+        } catch (IOException e2) {
+            throw new RuntimeException(e2);
         }
     }
 
