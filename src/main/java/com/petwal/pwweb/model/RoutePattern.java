@@ -42,6 +42,7 @@ public class RoutePattern {
         for (int i = 0; i < variableNames.size(); i++) {
             variables.put(variableNames.get(i), matcher.group(i + 1));
         }
+
         return variables;
     }
 
