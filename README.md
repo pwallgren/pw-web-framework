@@ -28,7 +28,7 @@ thread-per-request handling.
     
 ✏ Example controller
 ```java
-@PwController
+@PwController(path = "/test")
 public class UserController {
 
     @PwRoute(method = "GET", path = "/user/{id}")

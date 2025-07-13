@@ -14,6 +14,8 @@ import java.util.Set;
 
 public class RouteRegistry {
 
+    public static final String SLASH = "/";
+
     public static List<RouteEntry> register(final String controllersPath) {
         final List<RouteEntry> routes = new ArrayList<>();
         final Reflections reflections = new Reflections(controllersPath);
@@ -23,11 +25,12 @@ public class RouteRegistry {
             if (clazz.isAnnotationPresent(PwController.class)) {
                 try {
                     final Object instance = clazz.getConstructor().newInstance();
+                    final PwController controller = clazz.getAnnotation(PwController.class);
                     for (Method method : clazz.getDeclaredMethods()) {
                         final PwRoute route = method.getAnnotation(PwRoute.class);
                         if (route != null) {
-                            List<MethodArgument> methodArgumentList = new ArrayList<>();
-                            Parameter[] parameters = method.getParameters();
+                            final List<MethodArgument> methodArgumentList = new ArrayList<>();
+                            final Parameter[] parameters = method.getParameters();
                             for (Parameter parameter : parameters) {
                                 final PwPath pathAnnotation = parameter.getAnnotation(PwPath.class);
                                 final PwQuery queryAnnotation = parameter.getAnnotation(PwQuery.class);
@@ -44,9 +47,13 @@ public class RouteRegistry {
                                 }
                             }
 
+                            final String controllerPath = trimLeadingAndTrailingSlashes(controller.path());
+                            final String routePath = trimLeadingAndTrailingSlashes(route.path());
+                            final String fullPath = String.format("/%s/%s", controllerPath, routePath);
+
                             routes.add(RouteEntry.builder()
                                     .httpMethod(route.method())
-                                    .uri(new RoutePattern(route.path()))
+                                    .uri(new RoutePattern(fullPath))
                                     .handlerMethod(HandlerMethod.of(instance, method, methodArgumentList))
                                     .build());
                         }
@@ -57,6 +64,17 @@ public class RouteRegistry {
             }
         }
         return routes;
+    }
+
+    private static String trimLeadingAndTrailingSlashes(final String path) {
+        String trimmedPath = path;
+        if (path.startsWith(SLASH)) {
+            trimmedPath = path.substring(1);
+        }
+        if (path.endsWith(SLASH)) {
+            trimmedPath = path.substring(path.length() - 1);
+        }
+        return trimmedPath;
     }
 
 }

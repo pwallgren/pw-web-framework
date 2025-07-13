@@ -10,7 +10,7 @@ import com.petwal.pwweb.http.HttpResponse;
 import java.util.Map;
 import java.util.Optional;
 
-@PwController
+@PwController(path = "test")
 public class TestController {
 
     private final Map<Integer, String> DB_NAME = Map.of(
@@ -23,7 +23,7 @@ public class TestController {
             "Janne", "Kallesson"
     );
 
-    @PwRoute(method = "GET", path = "/test")
+    @PwRoute(method = "GET", path = "test")
     public HttpResponse getTest(final HttpRequest request) {
         return HttpResponse.builder()
                 .statusCode(200)
@@ -37,7 +37,7 @@ public class TestController {
                 .build();
     }
 
-    @PwRoute(method = "GET", path = "/query/{id}")
+    @PwRoute(method = "GET", path = "query/{id}")
     public HttpResponse getWithQuery(final HttpRequest request, final @PwQuery("name") String name, final @PwPath Integer id) {
 
         final String dbName = Optional.ofNullable(DB_NAME.get(id))
