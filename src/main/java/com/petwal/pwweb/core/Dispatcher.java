@@ -1,6 +1,12 @@
 package com.petwal.pwweb.core;
 
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.petwal.pwweb.core.exceptions.ExceptionHandler;
 import com.petwal.pwweb.core.exceptions.NotFoundException;
 import com.petwal.pwweb.core.route.RouteEntry;
@@ -20,9 +26,16 @@ public class Dispatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(Dispatcher.class);
 
     private final List<RouteEntry> routes;
+    private final ResponseWriter responseWriter;
 
     public Dispatcher(final String controllersPath) {
         this.routes = RouteRegistry.register(controllersPath);
+        this.responseWriter = new ResponseWriter(createDefaultMapper());
+    }
+
+    public Dispatcher(final String controllersPath, final ObjectMapper objectMapper) {
+        this.routes = RouteRegistry.register(controllersPath);
+        this.responseWriter = new ResponseWriter(objectMapper);
     }
 
     public void handle(final Socket socket) {
@@ -35,8 +48,7 @@ public class Dispatcher {
             final HttpRequest request = HttpRequestParser.parse(inputStream);
             final RouteEntry routeEntry = getMatchingRoute(request);
             final HttpResponse response = routeEntry.invokeHandler(request);
-
-            ResponseWriter.send(response, outputStream);
+            responseWriter.send(response, outputStream);
         } catch (Exception ex) {
             handleExceptions(ex, outputStream);
         } finally {
@@ -59,7 +71,7 @@ public class Dispatcher {
     private void handleExceptions(final Exception exception, final BufferedWriter outputStream) {
         LOGGER.error("Exception encountered", exception);
         try {
-            ResponseWriter.send(ExceptionHandler.handle(exception), outputStream);
+            responseWriter.send(ExceptionHandler.handle(exception), outputStream);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -87,5 +99,15 @@ public class Dispatcher {
         } catch (IOException e) {
             LOGGER.error("Failed to close socket: {} ", e.getMessage());
         }
+    }
+
+    private ObjectMapper createDefaultMapper() {
+        return new ObjectMapper()
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 }

@@ -8,31 +8,17 @@ import com.petwal.pwweb.http.HttpRequest;
 import com.petwal.pwweb.http.HttpResponse;
 
 import java.util.Map;
-import java.util.Optional;
 
 @PwController(path = "test")
 public class TestController {
 
-    private final Map<Integer, String> DB_NAME = Map.of(
-            1, "Petter",
-            2, "Janne"
-    );
-
-    private final Map<String, String> DB_SURNAME = Map.of(
-            "Petter", "Wallgren",
-            "Janne", "Kallesson"
-    );
-
     @PwRoute(method = "GET", path = "test")
     public HttpResponse getTest(final HttpRequest request) {
-        return HttpResponse.builder()
-                .statusCode(200)
-                .statusMessage("OK")
-                .body("""
-                        {
-                            "name": "petter"
-                        }
-                        """)
+
+        // Some logic...
+
+        return HttpResponse.ok()
+                .body(new TestUser(1337, "Janne"))
                 .headers(Map.of("Content-Type", "application/json"))
                 .build();
     }
@@ -40,20 +26,10 @@ public class TestController {
     @PwRoute(method = "GET", path = "query/{id}")
     public HttpResponse getWithQuery(final HttpRequest request, final @PwQuery("name") String name, final @PwPath Integer id) {
 
-        final String dbName = Optional.ofNullable(DB_NAME.get(id))
-                .orElse("unknown");
-        final String dbSurname = Optional.ofNullable(DB_SURNAME.get(name))
-                .orElse("unknown");
+        // Some logic...
 
-        return HttpResponse.builder()
-                .statusCode(200)
-                .statusMessage("OK")
-                .body("""
-                        {
-                            "name": "%s",
-                            "surname": "%s"
-                        }
-                        """.formatted(dbName, dbSurname))
+        return HttpResponse.ok()
+                .body(new TestUser(id, name))
                 .headers(Map.of("Content-Type", "application/json"))
                 .build();
     }

@@ -8,7 +8,7 @@ public class HttpResponse {
     private final int statusCode;
     private final String statusMessage;
     private final Map<String, String> headers;
-    private final String body;
+    private final Object body;
 
     public HttpResponse(final Builder builder) {
         this.statusCode = builder.statusCode;
@@ -29,8 +29,14 @@ public class HttpResponse {
         return headers;
     }
 
-    public String getBody() {
+    public Object getBody() {
         return body;
+    }
+
+    public static HttpResponse.Builder ok() {
+        return HttpResponse.builder()
+                .statusCode(200)
+                .body("OK");
     }
 
     public static HttpResponse.Builder badRequest() {
@@ -62,7 +68,7 @@ public class HttpResponse {
         private int statusCode;
         private String statusMessage;
         private Map<String, String> headers;
-        private String body;
+        private Object body;
 
         public Builder statusCode(final int statusCode) {
             this.statusCode = statusCode;
@@ -79,7 +85,7 @@ public class HttpResponse {
             return this;
         }
 
-        public Builder body(final String body) {
+        public Builder body(final Object body) {
             this.body = body;
             return this;
         }
