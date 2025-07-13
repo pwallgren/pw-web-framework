@@ -1,4 +1,7 @@
-package com.petwal.pwweb.model;
+package com.petwal.pwweb.core.route;
+
+import com.petwal.pwweb.http.HttpRequest;
+import com.petwal.pwweb.http.HttpResponse;
 
 import java.util.Map;
 

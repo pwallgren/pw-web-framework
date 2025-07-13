@@ -1,7 +1,8 @@
-package com.petwal.pwweb.parser;
+package com.petwal.pwweb.http;
 
 
-import com.petwal.pwweb.model.HttpRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -11,6 +12,8 @@ import java.util.Map;
 import static java.util.stream.Collectors.toMap;
 
 public class HttpRequestParser {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpRequestParser.class);
 
     public static final String SPACE = " ";
     public static final String COLON = ":";
@@ -25,12 +28,13 @@ public class HttpRequestParser {
     public static HttpRequest parse(final BufferedReader reader) throws IOException {
         final String requestLine = reader.readLine();
         if (requestLine == null || requestLine.isEmpty()) {
-            return null;
+            LOGGER.error("Encountered empty request");
+            throw new IllegalStateException("Encountered empty request");
         }
 
         final String[] parts = requestLine.split(SPACE);
         if (parts.length != 3) {
-            return null;
+            LOGGER.error("Request with invalid request line encountered: {}", requestLine);
         }
 
         final String method = parts[0];
@@ -49,7 +53,6 @@ public class HttpRequestParser {
                 .queryParams(queryParams)
                 .body(body)
                 .build();
-
     }
 
     private static String getBody(final BufferedReader reader, final Map<String, String> headers) throws IOException {
@@ -58,41 +61,36 @@ public class HttpRequestParser {
             final char[] bodyChars = new char[contentLength];
             final int read = reader.read(bodyChars, 0, contentLength);
             if (read != contentLength) {
-                throw new IOException("Unexpected end of body");
+                throw new IllegalStateException("Content length value does not match request body");
             }
             return new String(bodyChars);
         }
         return null;
     }
 
-    private static Map<String, String> getHeaders(final BufferedReader reader) throws IOException {
+    private static Map<String, String> getHeaders(final BufferedReader reader) {
         return reader.lines()
                 .takeWhile(line -> !line.isEmpty())
                 .filter(line -> line.indexOf(COLON) > 0)
-                .map(HttpRequestParser::toKeyVal)
-                .collect(toMap(KeyVal::key, KeyVal::val, (v1, v2) -> v1));
+                .map(HttpRequestParser::toHeader)
+                .collect(toMap(Header::key, Header::val, (v1, v2) -> v1));
     }
 
     private static Map<String, String> getQueryParams(final String uri) {
-        long count = uri.chars().filter(ch -> ch == QUESTION_MARK).count();
-        if (count > 1) {
-            throw new IllegalStateException("uri contains more then one question mark (?)");
-        }
-
         final String queryString = uri.substring(uri.indexOf(QUESTION_MARK));
         return Arrays.stream(queryString.substring(1).split(AMPERSAND))
                 .map(query -> query.split(EQUALS))
                 .collect(toMap(parts -> parts[0], parts -> parts[1]));
     }
 
-    private static KeyVal toKeyVal(final String line) {
+    private static Header toHeader(final String line) {
         final int colonIndex = line.indexOf(COLON);
         final String key = line.substring(0, colonIndex).trim();
         final String value = line.substring(colonIndex + 1).trim();
-        return new KeyVal(key, value);
+        return new Header(key, value);
     }
 
-    record KeyVal(String key, String val) {
+    private record Header(String key, String val) {
 
     }
 }

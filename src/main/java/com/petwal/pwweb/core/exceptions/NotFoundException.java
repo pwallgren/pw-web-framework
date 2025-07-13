@@ -1,6 +1,6 @@
-package com.petwal.pwweb.exceptions.model;
+package com.petwal.pwweb.core.exceptions;
 
-public class NotFoundException extends Exception {
+public class NotFoundException extends RuntimeException {
     public NotFoundException(final String message) {
         super(message);
     }

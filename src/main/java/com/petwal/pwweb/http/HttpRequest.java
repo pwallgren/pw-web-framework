@@ -1,4 +1,4 @@
-package com.petwal.pwweb.model;
+package com.petwal.pwweb.http;
 
 import java.util.Map;
 import java.util.Objects;

@@ -1,4 +1,7 @@
-package com.petwal.pwweb.model;
+package com.petwal.pwweb.core.route;
+
+import com.petwal.pwweb.http.HttpRequest;
+import com.petwal.pwweb.http.HttpResponse;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -10,15 +13,15 @@ import java.util.stream.Stream;
 public class HandlerMethod {
     private final Object instance;
     private final Method method;
-    private final List<ParameterMeta> parameterMetas;
+    private final List<MethodArgument> methodArguments;
 
-    private HandlerMethod(final Object instance, final Method method, final List<ParameterMeta> parameterMetas) {
+    private HandlerMethod(final Object instance, final Method method, final List<MethodArgument> methodArguments) {
         this.instance = instance;
         this.method = method;
-        this.parameterMetas = parameterMetas;
+        this.methodArguments = methodArguments;
     }
 
-    public static HandlerMethod of(final Object instance, final Method method, final List<ParameterMeta> parameters) {
+    public static HandlerMethod of(final Object instance, final Method method, final List<MethodArgument> parameters) {
         return new HandlerMethod(instance, method, parameters);
     }
 
@@ -29,14 +32,14 @@ public class HandlerMethod {
 
     private List<Object> getArguments(final HttpRequest request, final Map<String, String> pathParams) {
         final Map<String, String> queryParams = request.getQueryParams();
-        return parameterMetas.stream()
-                .map(parameterMeta -> {
-                    final String value = parameterMeta.isQuery()
-                            ? queryParams.get(parameterMeta.getName())
-                            : pathParams.get(parameterMeta.getName());
+        return methodArguments.stream()
+                .map(methodArgument -> {
+                    final String value = methodArgument.isQuery()
+                            ? queryParams.get(methodArgument.getName())
+                            : pathParams.get(methodArgument.getName());
 
                     return Optional.ofNullable(value)
-                            .map(val -> typeConvert(val, parameterMeta.getType()))
+                            .map(val -> typeConvert(val, methodArgument.getType()))
                             .orElse(null);
                 })
                 .filter(Objects::nonNull)

@@ -1,8 +1,6 @@
-package com.petwal.pwweb.exceptions;
+package com.petwal.pwweb.core.exceptions;
 
-import com.petwal.pwweb.exceptions.model.BadRequestException;
-import com.petwal.pwweb.exceptions.model.NotFoundException;
-import com.petwal.pwweb.model.HttpResponse;
+import com.petwal.pwweb.http.HttpResponse;
 
 public class ExceptionHandler {
 
@@ -14,6 +12,8 @@ public class ExceptionHandler {
             return HttpResponse.badRequest().build();
         } else if (ex instanceof NotFoundException) {
             return HttpResponse.notFound().build();
+        } else if (ex instanceof InternalErrorException) {
+            return HttpResponse.internalError().build();
         } else {
             return HttpResponse.internalError().build();
         }

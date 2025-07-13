@@ -1,4 +1,4 @@
-package com.petwal.pwweb.annotation;
+package com.petwal.pwweb.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.PARAMETER)
-public @interface PwQuery {
+public @interface PwPath {
     String value() default "";
 }

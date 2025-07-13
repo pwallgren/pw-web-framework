@@ -1,6 +1,6 @@
-package com.petwal.pwweb.exceptions.model;
+package com.petwal.pwweb.core.exceptions;
 
-public class BadRequestException extends Exception {
+public class BadRequestException extends RuntimeException {
 
     public BadRequestException(final String message) {
         super(message);

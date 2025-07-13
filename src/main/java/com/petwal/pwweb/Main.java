@@ -1,11 +1,13 @@
 package com.petwal.pwweb;
 
 
-import com.petwal.pwweb.server.WebServer;
+import com.petwal.pwweb.core.Dispatcher;
+import com.petwal.pwweb.core.Server;
 
 public class Main {
-    public static void main(String[] args) throws Exception {
-        WebServer webServer = new WebServer();
-        webServer.start(5000, "com.petwal.pwweb.controller");
+    public static void main(String[] args) {
+        final Dispatcher dispatcher = new Dispatcher("com.petwal.pwweb.controller");
+        final Server server = new Server(5000, dispatcher);
+        server.start();
     }
 }

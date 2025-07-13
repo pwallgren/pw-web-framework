@@ -1,11 +1,11 @@
 package com.petwal.pwweb.controller;
 
-import com.petwal.pwweb.annotation.PwController;
-import com.petwal.pwweb.annotation.PwPath;
-import com.petwal.pwweb.annotation.PwQuery;
-import com.petwal.pwweb.annotation.PwRoute;
-import com.petwal.pwweb.model.HttpRequest;
-import com.petwal.pwweb.model.HttpResponse;
+import com.petwal.pwweb.annotations.PwController;
+import com.petwal.pwweb.annotations.PwPath;
+import com.petwal.pwweb.annotations.PwQuery;
+import com.petwal.pwweb.annotations.PwRoute;
+import com.petwal.pwweb.http.HttpRequest;
+import com.petwal.pwweb.http.HttpResponse;
 
 import java.util.Map;
 import java.util.Optional;

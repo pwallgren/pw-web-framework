@@ -1,4 +1,4 @@
-package com.petwal.pwweb.model;
+package com.petwal.pwweb.core.route;
 
 import java.util.*;
 import java.util.regex.Matcher;
