@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.petwal.pwweb.util.Check.notNull;
 import static java.util.stream.Collectors.joining;
 
 public class RoutePattern {
@@ -19,7 +20,7 @@ public class RoutePattern {
     }
 
     public RoutePattern(final String originalPattern) {
-        this.originalPattern = originalPattern;
+        this.originalPattern = notNull("originalPattern", originalPattern);
         this.variableNames = new ArrayList<>();
 
         final String regex = Arrays.stream(originalPattern.split(SLASH))

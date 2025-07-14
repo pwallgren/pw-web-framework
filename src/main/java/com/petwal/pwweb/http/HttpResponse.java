@@ -2,6 +2,10 @@ package com.petwal.pwweb.http;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+
+import static com.petwal.pwweb.util.Check.notNull;
+import static com.petwal.pwweb.util.Check.orEmpty;
 
 public class HttpResponse {
 
@@ -11,9 +15,9 @@ public class HttpResponse {
     private final Object body;
 
     public HttpResponse(final Builder builder) {
-        this.statusCode = builder.statusCode;
-        this.statusMessage = builder.statusMessage;
-        this.headers = builder.headers;
+        this.statusCode = notNull("statusCode", builder.statusCode);
+        this.statusMessage = notNull("statusMessage", builder.statusMessage);
+        this.headers = orEmpty(builder.headers);
         this.body = builder.body;
     }
 
@@ -29,35 +33,35 @@ public class HttpResponse {
         return headers;
     }
 
-    public Object getBody() {
-        return body;
+    public Optional<Object> getBody() {
+        return Optional.ofNullable(body);
     }
 
     public static HttpResponse.Builder ok() {
         return HttpResponse.builder()
                 .statusCode(200)
-                .body("OK");
+                .statusMessage("OK");
     }
 
     public static HttpResponse.Builder badRequest() {
         return HttpResponse.builder()
                 .statusCode(400)
-                .headers(Map.of("Content-Type", "text/plain"))
-                .body("Bad Request");
+                .statusMessage("Bad Request")
+                .headers(Map.of("Content-Type", "text/plain"));
     }
 
     public static HttpResponse.Builder notFound() {
         return HttpResponse.builder()
                 .statusCode(404)
-                .headers(Map.of("Content-Type", "text/plain"))
-                .body("Not Found");
+                .statusMessage("Not Found")
+                .headers(Map.of("Content-Type", "text/plain"));
     }
 
     public static HttpResponse.Builder internalError() {
         return HttpResponse.builder()
                 .statusCode(500)
-                .headers(Map.of("Content-Type", "text/plain"))
-                .body("Internal Server Error");
+                .statusMessage("Internal Server Error")
+                .headers(Map.of("Content-Type", "text/plain"));
     }
 
     public static Builder builder() {
@@ -65,7 +69,7 @@ public class HttpResponse {
     }
 
     public static class Builder {
-        private int statusCode;
+        private Integer statusCode;
         private String statusMessage;
         private Map<String, String> headers;
         private Object body;

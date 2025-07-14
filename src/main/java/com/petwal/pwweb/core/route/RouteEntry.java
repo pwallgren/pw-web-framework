@@ -6,15 +6,17 @@ import com.petwal.pwweb.http.HttpResponse;
 
 import java.util.Map;
 
+import static com.petwal.pwweb.util.Check.notNull;
+
 public class RouteEntry {
     private final HttpMethod httpMethod;
     private final RoutePattern pattern;
     private final HandlerMethod handlerMethod;
 
     public RouteEntry(final Builder builder) {
-        this.httpMethod = builder.httpMethod;
-        this.pattern = builder.pattern;
-        this.handlerMethod = builder.handlerMethod;
+        this.httpMethod = notNull("httpMethod", builder.httpMethod);
+        this.pattern = notNull("pattern", builder.pattern);
+        this.handlerMethod = notNull("handlerMethod", builder.handlerMethod);
     }
 
     public HttpMethod getHttpMethod() {

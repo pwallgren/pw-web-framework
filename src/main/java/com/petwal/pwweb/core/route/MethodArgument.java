@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.petwal.pwweb.http.HttpRequest;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public class MethodArgument {
     private final String name;
@@ -50,8 +51,8 @@ public class MethodArgument {
         return type;
     }
 
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
+    public Optional<ObjectMapper> getObjectMapper() {
+        return Optional.ofNullable(objectMapper);
     }
 
     public boolean isPath() {

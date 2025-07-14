@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.petwal.pwweb.util.Check.notNull;
+import static com.petwal.pwweb.util.Check.orEmpty;
+
 public class HttpRequest {
 
     public static final char QUESTION_MARK = '?';
@@ -16,11 +19,11 @@ public class HttpRequest {
     private final String body;
 
     public HttpRequest(final Builder builder) {
-        this.method = builder.method;
-        this.uri = builder.uri;
+        this.method = notNull("method", builder.method);
+        this.uri = notNull("uri", builder.uri);
         this.version = builder.version;
-        this.headers = builder.headers;
-        this.queryParams = builder.queryParams;
+        this.headers = orEmpty(builder.headers);
+        this.queryParams = orEmpty(builder.queryParams);
         this.body = builder.body;
     }
 
@@ -32,8 +35,8 @@ public class HttpRequest {
         return uri;
     }
 
-    public String getVersion() {
-        return version;
+    public Optional<String> getVersion() {
+        return Optional.ofNullable(version);
     }
 
     public Map<String, String> getHeaders() {

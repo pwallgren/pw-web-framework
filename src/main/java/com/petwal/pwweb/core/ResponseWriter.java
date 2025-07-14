@@ -7,6 +7,8 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.petwal.pwweb.util.Check.notNull;
+
 public class ResponseWriter {
 
     private static final String HTTP_1_1 = "HTTP/1.1";
@@ -15,7 +17,7 @@ public class ResponseWriter {
     private final ObjectMapper objectMapper;
 
     public ResponseWriter(final ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.objectMapper = notNull("objectMapper", objectMapper);
     }
 
     public void send(final HttpResponse response, final BufferedWriter outputStream) throws IOException {
@@ -26,9 +28,14 @@ public class ResponseWriter {
             }
         }
         outputStream.write(CRLF);
-        if (response.getBody() != null) {
-            outputStream.write(toJson(response.getBody()));
-        }
+        response.getBody()
+                .ifPresent(body -> {
+                    try {
+                        outputStream.write(toJson(body));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
         outputStream.flush();
     }
 

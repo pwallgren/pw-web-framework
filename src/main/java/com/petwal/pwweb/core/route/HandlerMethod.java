@@ -9,15 +9,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.petwal.pwweb.util.Check.notNull;
+import static com.petwal.pwweb.util.Check.orEmpty;
+
 public class HandlerMethod {
     private final Object instance;
     private final Method method;
     private final List<MethodArgument> methodArguments;
 
     private HandlerMethod(final Object instance, final Method method, final List<MethodArgument> methodArguments) {
-        this.instance = instance;
-        this.method = method;
-        this.methodArguments = methodArguments;
+        this.instance = notNull("instance", instance);
+        this.method = notNull("method", method);
+        this.methodArguments = orEmpty(methodArguments);
     }
 
     public static HandlerMethod of(final Object instance, final Method method, final List<MethodArgument> parameters) {
@@ -60,7 +63,9 @@ public class HandlerMethod {
 
     private static Object toObject(final MethodArgument methodArgument, final String body) {
         try {
-            return methodArgument.getObjectMapper().readValue(body, methodArgument.getType());
+            return methodArgument.getObjectMapper()
+                    .orElseThrow(() -> new IllegalStateException("ObjectMapper expected to be non null when converting body"))
+                    .readValue(body, methodArgument.getType());
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
