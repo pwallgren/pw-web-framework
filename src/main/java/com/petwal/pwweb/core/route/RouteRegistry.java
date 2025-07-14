@@ -1,9 +1,7 @@
 package com.petwal.pwweb.core.route;
 
-import com.petwal.pwweb.annotations.PwController;
-import com.petwal.pwweb.annotations.PwPath;
-import com.petwal.pwweb.annotations.PwQuery;
-import com.petwal.pwweb.annotations.PwRoute;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petwal.pwweb.annotations.*;
 import com.petwal.pwweb.http.HttpRequest;
 import org.reflections.Reflections;
 
@@ -17,7 +15,7 @@ public class RouteRegistry {
 
     public static final String SLASH = "/";
 
-    public static List<RouteEntry> register(final String controllersPath) {
+    public static List<RouteEntry> register(final String controllersPath, final ObjectMapper objectMapper) {
         final List<RouteEntry> routes = new ArrayList<>();
         final Reflections reflections = new Reflections(controllersPath);
 
@@ -35,6 +33,7 @@ public class RouteRegistry {
                             for (Parameter parameter : parameters) {
                                 final PwPath pathAnnotation = parameter.getAnnotation(PwPath.class);
                                 final PwQuery queryAnnotation = parameter.getAnnotation(PwQuery.class);
+                                final PwBody bodyAnnotation = parameter.getAnnotation(PwBody.class);
                                 if (pathAnnotation != null) {
                                     final String name = pathAnnotation.value().isEmpty()
                                             ? parameter.getName()
@@ -45,10 +44,11 @@ public class RouteRegistry {
                                             ? parameter.getName()
                                             : queryAnnotation.value();
                                     methodArgumentList.add(MethodArgument.query(name, parameter.getType()));
+                                } else if (bodyAnnotation != null) {
+                                    methodArgumentList.add(MethodArgument.body(parameter.getType(), objectMapper));
                                 } else if (parameter.getType().equals(HttpRequest.class)) {
                                     methodArgumentList.add(MethodArgument.request());
-                                }
-                                else {
+                                } else {
                                     throw new IllegalStateException("Unsupported parameter: " + parameter);
                                 }
                             }

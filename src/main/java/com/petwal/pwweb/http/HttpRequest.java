@@ -2,12 +2,13 @@ package com.petwal.pwweb.http;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class HttpRequest {
 
     public static final char QUESTION_MARK = '?';
 
-    private final String method;
+    private final HttpMethod method;
     private final String uri;
     private final String version;
     private final Map<String, String> headers;
@@ -23,7 +24,7 @@ public class HttpRequest {
         this.body = builder.body;
     }
 
-    public String getMethod() {
+    public HttpMethod getMethod() {
         return method;
     }
 
@@ -43,17 +44,13 @@ public class HttpRequest {
         return queryParams;
     }
 
-    public String getBody() {
-        return body;
+    public Optional<String> getBody() {
+        return Optional.ofNullable(body);
     }
 
     public String getPath() {
-        long count = uri.chars()
-                .filter(ch -> ch == QUESTION_MARK)
-                .count();
-
-        if (count > 1) {
-            throw new IllegalStateException("uri contains more then one question mark (?)");
+        if (!uri.contains(String.valueOf(QUESTION_MARK))) {
+            return uri;
         }
 
         final int indexOf = uri.indexOf(QUESTION_MARK);
@@ -65,14 +62,14 @@ public class HttpRequest {
     }
 
     public static class Builder {
-        private String method;
+        private HttpMethod method;
         private String uri;
         private String version;
         private Map<String, String> headers;
         private Map<String, String> queryParams;
         private String body;
 
-        public Builder method(final String method) {
+        public Builder method(final HttpMethod method) {
             this.method = method;
             return this;
         }

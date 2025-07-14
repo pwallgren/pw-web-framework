@@ -1,9 +1,7 @@
 package com.petwal.pwweb.controller;
 
-import com.petwal.pwweb.annotations.PwController;
-import com.petwal.pwweb.annotations.PwPath;
-import com.petwal.pwweb.annotations.PwQuery;
-import com.petwal.pwweb.annotations.PwRoute;
+import com.petwal.pwweb.annotations.*;
+import com.petwal.pwweb.http.HttpMethod;
 import com.petwal.pwweb.http.HttpRequest;
 import com.petwal.pwweb.http.HttpResponse;
 
@@ -12,24 +10,22 @@ import java.util.Map;
 @PwController(path = "test")
 public class TestController {
 
-    @PwRoute(method = "GET", path = "test")
-    public HttpResponse getTest(final HttpRequest request) {
+    @PwRoute(method = HttpMethod.GET, path = "query/{id}")
+    public HttpResponse getQuery(final HttpRequest request, final @PwQuery("name") String name, final @PwPath Integer id, final @PwBody TestBody body) {
 
         // Some logic...
-
         return HttpResponse.ok()
-                .body(new TestUser(1337, "Janne"))
+                .body(body)
                 .headers(Map.of("Content-Type", "application/json"))
                 .build();
     }
 
-    @PwRoute(method = "GET", path = "query/{id}")
-    public HttpResponse getWithQuery(final HttpRequest request, final @PwQuery("name") String name, final @PwPath Integer id) {
+    @PwRoute(method = HttpMethod.POST, path = "/")
+    public HttpResponse post(final HttpRequest request, final @PwBody TestBody body) {
 
         // Some logic...
-
         return HttpResponse.ok()
-                .body(new TestUser(id, name))
+                .body(body)
                 .headers(Map.of("Content-Type", "application/json"))
                 .build();
     }

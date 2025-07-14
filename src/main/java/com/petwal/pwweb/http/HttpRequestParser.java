@@ -37,7 +37,7 @@ public class HttpRequestParser {
             LOGGER.error("Request with invalid request line encountered: {}", requestLine);
         }
 
-        final String method = parts[0];
+        final HttpMethod method = HttpMethod.valueOf(parts[0].toUpperCase());
         final String uri = parts[1];
         final String version = parts[2];
 
@@ -77,6 +77,9 @@ public class HttpRequestParser {
     }
 
     private static Map<String, String> getQueryParams(final String uri) {
+        if (!uri.contains(String.valueOf(QUESTION_MARK))) {
+            return Map.of();
+        }
         final String queryString = uri.substring(uri.indexOf(QUESTION_MARK));
         return Arrays.stream(queryString.substring(1).split(AMPERSAND))
                 .map(query -> query.split(EQUALS))

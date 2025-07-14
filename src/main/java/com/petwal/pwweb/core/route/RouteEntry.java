@@ -1,12 +1,13 @@
 package com.petwal.pwweb.core.route;
 
+import com.petwal.pwweb.http.HttpMethod;
 import com.petwal.pwweb.http.HttpRequest;
 import com.petwal.pwweb.http.HttpResponse;
 
 import java.util.Map;
 
 public class RouteEntry {
-    private final String httpMethod;
+    private final HttpMethod httpMethod;
     private final RoutePattern pattern;
     private final HandlerMethod handlerMethod;
 
@@ -16,7 +17,7 @@ public class RouteEntry {
         this.handlerMethod = builder.handlerMethod;
     }
 
-    public String getHttpMethod() {
+    public HttpMethod getHttpMethod() {
         return httpMethod;
     }
 
@@ -34,11 +35,11 @@ public class RouteEntry {
     }
 
     public static class Builder {
-        private String httpMethod;                  // GET, POST, etc.
+        private HttpMethod httpMethod;                  // GET, POST, etc.
         private RoutePattern pattern;               // the compiled pattern
         private HandlerMethod handlerMethod;
 
-        public Builder httpMethod(final String httpMethod) {
+        public Builder httpMethod(final HttpMethod httpMethod) {
             this.httpMethod = httpMethod;
             return this;
         }

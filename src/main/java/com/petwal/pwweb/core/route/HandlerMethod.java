@@ -1,12 +1,12 @@
 package com.petwal.pwweb.core.route;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.petwal.pwweb.http.HttpRequest;
 import com.petwal.pwweb.http.HttpResponse;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 public class HandlerMethod {
@@ -36,11 +36,18 @@ public class HandlerMethod {
                     if (methodArgument.isHttpRequest()) {
                         return request;
                     }
+                    if (methodArgument.isBody()) {
+                        return request.getBody()
+                                .map(body -> toObject(methodArgument, body))
+                                .orElse(null);
+                    }
 
                     String value = null;
                     if (methodArgument.isQuery()) {
                         value = queryParams.get(methodArgument.getName());
                     } else if (methodArgument.isPath()) {
+                        value = pathParams.get(methodArgument.getName());
+                    } else if (methodArgument.isBody()) {
                         value = pathParams.get(methodArgument.getName());
                     }
 
@@ -48,8 +55,15 @@ public class HandlerMethod {
                             .map(val -> typeConvert(val, methodArgument.getType()))
                             .orElse(null);
                 })
-                .filter(Objects::nonNull)
                 .toList();
+    }
+
+    private static Object toObject(final MethodArgument methodArgument, final String body) {
+        try {
+            return methodArgument.getObjectMapper().readValue(body, methodArgument.getType());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Object typeConvert(final String value, final Class<?> type) {

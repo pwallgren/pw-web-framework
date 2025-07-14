@@ -29,12 +29,13 @@ public class Dispatcher {
     private final ResponseWriter responseWriter;
 
     public Dispatcher(final String controllersPath) {
-        this.routes = RouteRegistry.register(controllersPath);
-        this.responseWriter = new ResponseWriter(createDefaultMapper());
+        final ObjectMapper objectMapper = createDefaultMapper();
+        this.routes = RouteRegistry.register(controllersPath, objectMapper);
+        this.responseWriter = new ResponseWriter(objectMapper);
     }
 
     public Dispatcher(final String controllersPath, final ObjectMapper objectMapper) {
-        this.routes = RouteRegistry.register(controllersPath);
+        this.routes = RouteRegistry.register(controllersPath, objectMapper);
         this.responseWriter = new ResponseWriter(objectMapper);
     }
 
@@ -62,7 +63,7 @@ public class Dispatcher {
 
     private RouteEntry getMatchingRoute(final HttpRequest request) {
         return routes.stream()
-                .filter(entry -> entry.getHttpMethod().equalsIgnoreCase(request.getMethod()))
+                .filter(entry -> entry.getHttpMethod() == request.getMethod())
                 .filter(route -> route.getPattern().match(request.getPath()))
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Handler method for request not found"));
