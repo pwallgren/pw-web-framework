@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public class HandlerMethod {
     private final Object instance;
@@ -27,16 +26,23 @@ public class HandlerMethod {
 
     public HttpResponse invoke(final HttpRequest request, final Map<String, String> pathParams) throws Exception {
         final List<Object> arguments = getArguments(request, pathParams);
-        return (HttpResponse) method.invoke(instance, Stream.concat(Stream.of(request), arguments.stream()).toArray());
+        return (HttpResponse) method.invoke(instance, arguments.toArray());
     }
 
     private List<Object> getArguments(final HttpRequest request, final Map<String, String> pathParams) {
         final Map<String, String> queryParams = request.getQueryParams();
         return methodArguments.stream()
                 .map(methodArgument -> {
-                    final String value = methodArgument.isQuery()
-                            ? queryParams.get(methodArgument.getName())
-                            : pathParams.get(methodArgument.getName());
+                    if (methodArgument.isHttpRequest()) {
+                        return request;
+                    }
+
+                    String value = null;
+                    if (methodArgument.isQuery()) {
+                        value = queryParams.get(methodArgument.getName());
+                    } else if (methodArgument.isPath()) {
+                        value = pathParams.get(methodArgument.getName());
+                    }
 
                     return Optional.ofNullable(value)
                             .map(val -> typeConvert(val, methodArgument.getType()))

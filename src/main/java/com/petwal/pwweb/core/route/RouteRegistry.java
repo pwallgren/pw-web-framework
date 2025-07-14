@@ -4,6 +4,7 @@ import com.petwal.pwweb.annotations.PwController;
 import com.petwal.pwweb.annotations.PwPath;
 import com.petwal.pwweb.annotations.PwQuery;
 import com.petwal.pwweb.annotations.PwRoute;
+import com.petwal.pwweb.http.HttpRequest;
 import org.reflections.Reflections;
 
 import java.lang.reflect.Method;
@@ -44,6 +45,11 @@ public class RouteRegistry {
                                             ? parameter.getName()
                                             : queryAnnotation.value();
                                     methodArgumentList.add(MethodArgument.query(name, parameter.getType()));
+                                } else if (parameter.getType().equals(HttpRequest.class)) {
+                                    methodArgumentList.add(MethodArgument.request());
+                                }
+                                else {
+                                    throw new IllegalStateException("Unsupported parameter: " + parameter);
                                 }
                             }
 

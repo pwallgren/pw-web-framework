@@ -1,5 +1,7 @@
 package com.petwal.pwweb.core.route;
 
+import com.petwal.pwweb.http.HttpRequest;
+
 import java.util.Objects;
 
 public class MethodArgument {
@@ -23,6 +25,10 @@ public class MethodArgument {
         return new MethodArgument(name, type, false, true);
     }
 
+    public static MethodArgument request() {
+        return new MethodArgument("HttpRequest", HttpRequest.class, false, false);
+    }
+
     public String getName() {
         return name;
     }
@@ -37,6 +43,10 @@ public class MethodArgument {
 
     public boolean isQuery() {
         return isQuery;
+    }
+
+    public boolean isHttpRequest() {
+        return type.equals(HttpRequest.class);
     }
 
     @Override
