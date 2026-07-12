@@ -10,11 +10,11 @@ public class BeanDefinition {
 
   private BeanDefinition(final Method method, final String name) {
     this.method = Check.notNull("method", method);
-    this.name = name;
+    this.name = Check.notNull("name", name);
   }
 
-  public static BeanDefinition of(final Method method, final String qualifier) {
-    return new BeanDefinition(method, qualifier);
+  public static BeanDefinition of(final Method method, final String name) {
+    return new BeanDefinition(method, name);
   }
 
   public Method getMethod() {

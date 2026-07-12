@@ -40,8 +40,7 @@ public class BeanRegistry {
       final List<BeanDefinition> beanDefinitions) {
 
     final Method method = beanDefinition.getMethod();
-    final String beanName = beanDefinition.getName();
-    final String key = beanName.isEmpty() ? method.getReturnType().getName() : beanName;
+    final String key = beanDefinition.getName();
     if (beans.containsKey(key)) {
       return beans.get(key);
     }

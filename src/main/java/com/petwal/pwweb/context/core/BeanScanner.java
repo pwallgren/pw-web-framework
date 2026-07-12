@@ -20,16 +20,14 @@ public class BeanScanner {
         PwConfiguration.class);
 
     for (Class<?> clazz : configurationClasses) {
-      if (clazz.isAnnotationPresent(PwConfiguration.class)) {
-        final Method[] methods = clazz.getDeclaredMethods();
-        for (Method method : methods) {
-          final PwBean pwBean = method.getAnnotation(PwBean.class);
-          if (pwBean != null) {
-            final String pwBeanName = pwBean.name();
-            final String name =
-                pwBeanName.isEmpty() ? method.getReturnType().getName() : pwBeanName;
-            beanDefinitions.add(BeanDefinition.of(method, name));
-          }
+      final Method[] methods = clazz.getDeclaredMethods();
+      for (Method method : methods) {
+        final PwBean pwBean = method.getAnnotation(PwBean.class);
+        if (pwBean != null) {
+          final String pwBeanName = pwBean.name();
+          final String name =
+              pwBeanName.isEmpty() ? method.getReturnType().getName() : pwBeanName;
+          beanDefinitions.add(BeanDefinition.of(method, name));
         }
       }
     }
