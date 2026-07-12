@@ -1,11 +1,7 @@
-package com.petwal.pwweb;
+package com.petwal.pwweb.demo;
 
 
 import com.petwal.pwweb.context.core.BeanRegistry;
-import com.petwal.pwweb.demo.Horse;
-import com.petwal.pwweb.demo.Legs;
-import com.petwal.pwweb.web.core.Dispatcher;
-import com.petwal.pwweb.web.core.Server;
 
 public class Main {
 
@@ -13,9 +9,10 @@ public class Main {
     final BeanRegistry beanRegistry = new BeanRegistry();
     beanRegistry.scan("com.petwal.pwweb");
 
-    final Horse horse = beanRegistry.getBean(Horse.class);
-    final Legs Legs = beanRegistry.getBean(Legs.class);
-
+    final Car car1 = beanRegistry.getBean("janneHorse");
+    final Car car2 = beanRegistry.getBean(Car.class);
+    final Wheel wheel1 = beanRegistry.getBean("janneLegs");
+    final Wheel wheel2 = beanRegistry.getBean(Wheel.class);
   }
 
   /*

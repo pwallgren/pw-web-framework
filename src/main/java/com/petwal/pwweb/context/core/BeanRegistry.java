@@ -1,5 +1,6 @@
 package com.petwal.pwweb.context.core;
 
+import com.petwal.pwweb.context.annotation.PwNamed;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -17,8 +18,8 @@ public class BeanRegistry {
     configInstances = new HashMap<>();
   }
 
-  public Object getBean(final String qualifier) {
-    return beans.get(qualifier);
+  public <T> T getBean(final String qualifier) {
+    return (T) beans.get(qualifier);
   }
 
   public <T> T getBean(final Class<T> clazz) {
@@ -27,7 +28,7 @@ public class BeanRegistry {
 
   public void registerBeans(final List<BeanDefinition> beanDefinitions) {
     beanDefinitions
-        .forEach(definition -> resolve(definition.getMethod(), beanDefinitions));
+        .forEach(definition -> resolve(definition, beanDefinitions));
   }
 
   public void scan(final String basePackage) {
@@ -35,9 +36,12 @@ public class BeanRegistry {
     registerBeans(beanDefinitions);
   }
 
-  private Object resolve(final Method method, final List<BeanDefinition> beanDefinitions) {
+  private Object resolve(final BeanDefinition beanDefinition,
+      final List<BeanDefinition> beanDefinitions) {
 
-    final String key = method.getReturnType().getName();
+    final Method method = beanDefinition.getMethod();
+    final String beanName = beanDefinition.getName();
+    final String key = beanName.isEmpty() ? method.getReturnType().getName() : beanName;
     if (beans.containsKey(key)) {
       return beans.get(key);
     }
@@ -46,8 +50,14 @@ public class BeanRegistry {
     final Object[] args = new Object[parameters.length];
 
     for (int i = 0; i < parameters.length; i++) {
-      final Method producer = findProducer(parameters[i].getType(), beanDefinitions);
-      args[i] = resolve(producer, beanDefinitions);
+      final Parameter parameter = parameters[i];
+      final PwNamed named = parameter.getAnnotation(PwNamed.class);
+
+      final BeanDefinition definition = named != null
+          ? findBeanDefinition(named.name(), beanDefinitions)
+          : findBeanDefinition(parameter.getType().getName(), beanDefinitions);
+
+      args[i] = resolve(definition, beanDefinitions);
     }
 
     try {
@@ -72,12 +82,12 @@ public class BeanRegistry {
     return configInstances.get(configurationClass);
   }
 
-  private Method findProducer(final Class<?> type, final List<BeanDefinition> beanDefinitions) {
+  private BeanDefinition findBeanDefinition(final String name,
+      final List<BeanDefinition> beanDefinitions) {
     return beanDefinitions.stream()
-        .map(BeanDefinition::getMethod)
-        .filter(method -> type.isAssignableFrom(method.getReturnType()))
+        .filter(beanDefinition -> beanDefinition.getName().equals(name))
         .findFirst()
-        .orElseThrow(() -> new IllegalStateException("No bean found for type: " + type.getName()));
+        .orElseThrow(() -> new IllegalStateException("No bean found for: " + name));
   }
 
 }

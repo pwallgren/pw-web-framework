@@ -25,7 +25,10 @@ public class BeanScanner {
         for (Method method : methods) {
           final PwBean pwBean = method.getAnnotation(PwBean.class);
           if (pwBean != null) {
-            beanDefinitions.add(BeanDefinition.of(method, pwBean.name()));
+            final String pwBeanName = pwBean.name();
+            final String name =
+                pwBeanName.isEmpty() ? method.getReturnType().getName() : pwBeanName;
+            beanDefinitions.add(BeanDefinition.of(method, name));
           }
         }
       }
