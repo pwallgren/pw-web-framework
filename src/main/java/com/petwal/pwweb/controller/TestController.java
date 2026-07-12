@@ -10,23 +10,24 @@ import java.util.Map;
 @PwController(path = "test")
 public class TestController {
 
-    @PwRoute(method = HttpMethod.GET, path = "query/{id}")
-    public HttpResponse getQuery(final HttpRequest request, final @PwQuery("name") String name, final @PwPath Integer id, final @PwBody TestBody body) {
+  @PwRoute(method = HttpMethod.GET, path = "query/{id}")
+  public HttpResponse getQuery(final HttpRequest request, final @PwQuery("name") String name,
+      final @PwPath Integer id, final @PwBody TestBody body) {
 
-        // Some logic...
-        return HttpResponse.ok()
-                .body(body)
-                .headers(Map.of("Content-Type", "application/json"))
-                .build();
-    }
+    // Some logic...
+    return HttpResponse.ok()
+        .body(body)
+        .headers(Map.of("Content-Type", "application/json"))
+        .build();
+  }
 
-    @PwRoute(method = HttpMethod.POST, path = "/")
-    public HttpResponse post(final HttpRequest request, final @PwBody TestBody body) {
+  @PwRoute(method = HttpMethod.POST, path = "/")
+  public HttpResponse post(final HttpRequest request, final @PwBody TestBody body) {
 
-        // Some logic...
-        return HttpResponse.ok()
-                .body(body)
-                .headers(Map.of("Content-Type", "application/json"))
-                .build();
-    }
+    // Some logic...
+    return HttpResponse.ok()
+        .body(body)
+        .headers(Map.of("Content-Type", "application/json"))
+        .build();
+  }
 }

@@ -10,6 +10,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface PwRoute {
-    String path();
-    HttpMethod method();
+
+  String path();
+
+  HttpMethod method();
+
 }
