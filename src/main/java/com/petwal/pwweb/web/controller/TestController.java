@@ -1,6 +1,6 @@
 package com.petwal.pwweb.web.controller;
 
-import com.petwal.pwweb.web.annotations.*;
+import com.petwal.pwweb.web.annotation.*;
 import com.petwal.pwweb.web.http.HttpMethod;
 import com.petwal.pwweb.web.http.HttpRequest;
 import com.petwal.pwweb.web.http.HttpResponse;

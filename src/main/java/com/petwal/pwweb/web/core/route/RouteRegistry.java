@@ -1,7 +1,7 @@
 package com.petwal.pwweb.web.core.route;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petwal.pwweb.web.annotations.*;
+import com.petwal.pwweb.web.annotation.*;
 import com.petwal.pwweb.web.http.HttpRequest;
 import org.reflections.Reflections;
 
