@@ -1,4 +1,4 @@
-package com.petwal.pwweb.web.controller;
+package com.petwal.pwweb.demo;
 
 public class TestBody {
 

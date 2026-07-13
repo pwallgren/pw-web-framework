@@ -1,6 +1,7 @@
 package com.petwal.pwweb.web.core.route;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petwal.pwweb.context.core.BeanContext;
 import com.petwal.pwweb.web.annotation.*;
 import com.petwal.pwweb.web.http.HttpRequest;
 import org.reflections.Reflections;
@@ -14,6 +15,63 @@ import java.util.Set;
 public class RouteRegistry {
 
   public static final String SLASH = "/";
+
+  public static List<RouteEntry> register(final BeanContext beanContext,
+      final ObjectMapper objectMapper) {
+
+    final List<RouteEntry> routes = new ArrayList<>();
+
+    final List<Object> controllers = beanContext.getBeansByAnnotation(PwController.class);
+
+    for (final Object instance : controllers) {
+      try {
+        final Class<?> clazz = instance.getClass();
+        final PwController controller = clazz.getAnnotation(PwController.class);
+        for (Method method : clazz.getDeclaredMethods()) {
+          final PwRoute route = method.getAnnotation(PwRoute.class);
+          if (route != null) {
+            final List<MethodArgument> methodArgumentList = new ArrayList<>();
+            final Parameter[] parameters = method.getParameters();
+            for (Parameter parameter : parameters) {
+              final PwPath pathAnnotation = parameter.getAnnotation(PwPath.class);
+              final PwQuery queryAnnotation = parameter.getAnnotation(PwQuery.class);
+              final PwBody bodyAnnotation = parameter.getAnnotation(PwBody.class);
+              if (pathAnnotation != null) {
+                final String name = pathAnnotation.value().isEmpty()
+                    ? parameter.getName()
+                    : pathAnnotation.value();
+                methodArgumentList.add(MethodArgument.path(name, parameter.getType()));
+              } else if (queryAnnotation != null) {
+                final String name = queryAnnotation.value().isEmpty()
+                    ? parameter.getName()
+                    : queryAnnotation.value();
+                methodArgumentList.add(MethodArgument.query(name, parameter.getType()));
+              } else if (bodyAnnotation != null) {
+                methodArgumentList.add(MethodArgument.body(parameter.getType(), objectMapper));
+              } else if (parameter.getType().equals(HttpRequest.class)) {
+                methodArgumentList.add(MethodArgument.request());
+              } else {
+                throw new IllegalStateException("Unsupported parameter: " + parameter);
+              }
+            }
+
+            final String controllerPath = trimLeadingAndTrailingSlashes(controller.path());
+            final String routePath = trimLeadingAndTrailingSlashes(route.path());
+            final String fullPath = String.format("/%s/%s", controllerPath, routePath);
+
+            routes.add(RouteEntry.builder()
+                .httpMethod(route.method())
+                .uri(new RoutePattern(fullPath))
+                .handlerMethod(HandlerMethod.of(instance, method, methodArgumentList))
+                .build());
+          }
+        }
+      } catch (Exception e) {
+        throw new RuntimeException("Error when initializing the routes", e);
+      }
+    }
+    return routes;
+  }
 
   public static List<RouteEntry> register(final String controllersPath,
       final ObjectMapper objectMapper) {

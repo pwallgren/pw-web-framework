@@ -1,5 +1,5 @@
 <configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender fullName="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <!-- Format: timestamp log-level [thread] logger - message -->
             <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>

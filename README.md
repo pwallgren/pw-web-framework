@@ -19,7 +19,7 @@ thread-per-request handling.
 2. Define methods with @PwRoute(method = "GET", path = "/users/{id}")
 3. Bind method arguments automatically:
    - @PwPath("id") Integer id
-   - @PwQuery("name") String name
+   - @PwQuery("fullName") String fullName
 4. The dispatcher:
    - Matches incoming requests to routes
    - Parses path/query params

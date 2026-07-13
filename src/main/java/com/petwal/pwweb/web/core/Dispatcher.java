@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.petwal.pwweb.context.core.BeanContext;
 import com.petwal.pwweb.web.core.exceptions.ExceptionHandler;
 import com.petwal.pwweb.web.core.exceptions.NotFoundException;
 import com.petwal.pwweb.web.core.route.RouteEntry;
@@ -27,14 +28,14 @@ public class Dispatcher {
   private final List<RouteEntry> routes;
   private final ResponseWriter responseWriter;
 
-  public Dispatcher(final String controllersPath) {
-    final ObjectMapper objectMapper = createDefaultMapper();
-    this.routes = RouteRegistry.register(controllersPath, objectMapper);
+  public Dispatcher(final BeanContext beanContext) {
+    final ObjectMapper objectMapper = createDefaultMapper(); // Use bean for this bad boy that can be overwritten
+    this.routes = RouteRegistry.register(beanContext, objectMapper);
     this.responseWriter = new ResponseWriter(objectMapper);
   }
 
-  public Dispatcher(final String controllersPath, final ObjectMapper objectMapper) {
-    this.routes = RouteRegistry.register(controllersPath, objectMapper);
+  public Dispatcher(final BeanContext beanContext, final ObjectMapper objectMapper) {
+    this.routes = RouteRegistry.register(beanContext, objectMapper);
     this.responseWriter = new ResponseWriter(objectMapper);
   }
 

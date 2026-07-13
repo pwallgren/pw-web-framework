@@ -1,6 +1,7 @@
 package com.petwal.pwweb.context.core;
 
 import com.petwal.pwweb.context.annotation.PwNamed;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -8,12 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BeanRegistry {
+public class BeanContext {
 
   private final Map<String, Object> beans;
   private final Map<Class<?>, Object> configInstances;
 
-  public BeanRegistry() {
+  public BeanContext() {
     beans = new HashMap<>();
     configInstances = new HashMap<>();
   }
@@ -24,6 +25,13 @@ public class BeanRegistry {
 
   public <T> T getBean(final Class<T> clazz) {
     return clazz.cast(beans.get(clazz.getName()));
+  }
+
+  public List<Object> getBeansByAnnotation(final Class<? extends Annotation> annotation) {
+    return beans.values()
+        .stream()
+        .filter(a -> a.getClass().isAnnotationPresent(annotation))
+        .toList();
   }
 
   public void registerBeans(final List<BeanDefinition> beanDefinitions) {

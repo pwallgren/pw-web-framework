@@ -8,23 +8,19 @@ import com.petwal.pwweb.context.annotation.PwNamed;
 public class ConfigurationTest {
 
   @PwBean
-  public Car car(final Wheel wheel) {
-    return new Car(wheel);
+  public TestService testService() {
+    return new TestService("testService OG");
   }
 
-  @PwBean(name = "janneCar")
-  public Car jannecar(@PwNamed(name = "janneWheel") final Wheel wheel) {
-    return new Car(wheel);
-  }
-
-  @PwBean(name = "janneWheel")
-  public Wheel wheel() {
-    return new Wheel("janne wheels");
+  @PwBean(name = "testService2")
+  public TestService testService2() {
+    return new TestService("testService 2");
   }
 
   @PwBean
-  public Wheel jannewheel() {
-    return new Wheel("default wheels");
+  public TestController testController(
+      final @PwNamed(name = "testService2") TestService testService) {
+    return new TestController(testService);
   }
 
 }
