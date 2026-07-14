@@ -1,6 +1,6 @@
 package com.petwal.pwweb.context.core;
 
-import com.petwal.pwweb.web.util.Check;
+import com.petwal.pwweb.util.Check;
 import java.lang.reflect.Method;
 
 public class BeanDefinition {

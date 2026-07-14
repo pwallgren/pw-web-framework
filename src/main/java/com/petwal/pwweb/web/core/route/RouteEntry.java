@@ -6,7 +6,7 @@ import com.petwal.pwweb.web.http.HttpResponse;
 
 import java.util.Map;
 
-import static com.petwal.pwweb.web.util.Check.notNull;
+import static com.petwal.pwweb.util.Check.notNull;
 
 public class RouteEntry {
 

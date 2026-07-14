@@ -1,4 +1,4 @@
-package com.petwal.pwweb.web.util;
+package com.petwal.pwweb.util;
 
 import java.util.List;
 import java.util.Map;

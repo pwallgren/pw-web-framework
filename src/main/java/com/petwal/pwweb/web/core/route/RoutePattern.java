@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.petwal.pwweb.web.util.Check.notNull;
+import static com.petwal.pwweb.util.Check.notNull;
 import static java.util.stream.Collectors.joining;
 
 public class RoutePattern {

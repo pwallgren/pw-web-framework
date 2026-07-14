@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.petwal.pwweb.web.util.Check.notNull;
-import static com.petwal.pwweb.web.util.Check.orEmpty;
+import static com.petwal.pwweb.util.Check.notNull;
+import static com.petwal.pwweb.util.Check.orEmpty;
 
 public class HttpResponse {
 
