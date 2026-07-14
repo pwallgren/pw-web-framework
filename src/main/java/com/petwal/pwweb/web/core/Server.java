@@ -1,5 +1,6 @@
 package com.petwal.pwweb.web.core;
 
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +18,7 @@ import static java.util.stream.Collectors.joining;
 public class Server {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
-  private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(10, 200, 60L,
-      TimeUnit.SECONDS, new LinkedBlockingQueue<>(1000));
+  private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
   private final int port;
   private final Dispatcher dispatcher;

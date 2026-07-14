@@ -3,20 +3,21 @@ package com.petwal.pwweb.context.core;
 import com.petwal.pwweb.context.annotation.PwNamed;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class BeanContext {
 
   private final Map<String, Object> beans;
-  private final Map<Class<?>, Object> configInstances;
 
   public BeanContext() {
     beans = new HashMap<>();
-    configInstances = new HashMap<>();
   }
 
   public <T> T getBean(final String qualifier) {
@@ -30,63 +31,65 @@ public class BeanContext {
   public List<Object> getBeansByAnnotation(final Class<? extends Annotation> annotation) {
     return beans.values()
         .stream()
-        .filter(a -> a.getClass().isAnnotationPresent(annotation))
+        .filter(bean -> bean.getClass().isAnnotationPresent(annotation))
         .toList();
   }
 
   public void registerBeans(final List<BeanDefinition> beanDefinitions) {
+    validateUniqueNames(beanDefinitions);
     beanDefinitions
-        .forEach(definition -> resolve(definition, beanDefinitions));
+        .forEach(definition -> resolve(definition, beanDefinitions, new ArrayDeque<>()));
   }
 
   public void scan(final String basePackage) {
-    final List<BeanDefinition> beanDefinitions = BeanScanner.scan(basePackage);
-    registerBeans(beanDefinitions);
+    registerBeans(BeanScanner.scan(basePackage));
   }
 
   private Object resolve(final BeanDefinition beanDefinition,
-      final List<BeanDefinition> beanDefinitions) {
+      final List<BeanDefinition> beanDefinitions, final Deque<String> resolutionPath) {
 
-    final Method method = beanDefinition.getMethod();
     final String key = beanDefinition.getName();
     if (beans.containsKey(key)) {
       return beans.get(key);
     }
 
-    final Parameter[] parameters = method.getParameters();
-    final Object[] args = new Object[parameters.length];
+    if (resolutionPath.contains(key)) {
+      throw new IllegalStateException(
+          "Circular dependency detected: " + String.join(" -> ", resolutionPath) + " -> " + key);
+    }
 
-    for (int i = 0; i < parameters.length; i++) {
-      final Parameter parameter = parameters[i];
+    resolutionPath.push(key);
+    try {
+      final Object[] args = resolveArguments(beanDefinition, beanDefinitions, resolutionPath);
+      final Object bean = beanDefinition.instantiate(args);
+      beans.put(key, bean);
+      return bean;
+    } catch (InvocationTargetException e) {
+      throw new RuntimeException("Bean factory threw an exception for '" + key + "'", e.getCause());
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException("Failed to create bean '" + key + "'", e);
+    } finally {
+      resolutionPath.pop();
+    }
+  }
+
+  private Object[] resolveArguments(final BeanDefinition beanDefinition,
+      final List<BeanDefinition> beanDefinitions, final Deque<String> resolutionPath) {
+
+    final List<Parameter> dependencies = beanDefinition.getDependencies();
+    final Object[] args = new Object[dependencies.size()];
+
+    for (int i = 0; i < dependencies.size(); i++) {
+      final Parameter parameter = dependencies.get(i);
       final PwNamed named = parameter.getAnnotation(PwNamed.class);
 
       final BeanDefinition definition = named != null
           ? findBeanDefinition(named.name(), beanDefinitions)
           : findBeanDefinition(parameter.getType().getName(), beanDefinitions);
 
-      args[i] = resolve(definition, beanDefinitions);
+      args[i] = resolve(definition, beanDefinitions, resolutionPath);
     }
-
-    try {
-      final Object configInstance = configInstance(method.getDeclaringClass());
-      final Object object = method.invoke(configInstance, args);
-      beans.put(key, object);
-      return object;
-    } catch (InvocationTargetException e) {
-      throw new RuntimeException("Bean factory threw an exception: " + method, e.getCause());
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException("Failed to invoke bean factory: " + method, e);
-    }
-
-  }
-
-  private Object configInstance(final Class<?> configurationClass)
-      throws ReflectiveOperationException {
-    if (!configInstances.containsKey(configurationClass)) {
-      configInstances.put(configurationClass,
-          configurationClass.getDeclaredConstructor().newInstance());
-    }
-    return configInstances.get(configurationClass);
+    return args;
   }
 
   private BeanDefinition findBeanDefinition(final String name,
@@ -95,6 +98,18 @@ public class BeanContext {
         .filter(beanDefinition -> beanDefinition.getName().equals(name))
         .findFirst()
         .orElseThrow(() -> new IllegalStateException("No bean found for: " + name));
+  }
+
+  private void validateUniqueNames(final List<BeanDefinition> beanDefinitions) {
+    final Set<String> namesInBatch = new HashSet<>();
+
+    beanDefinitions.forEach(beanDefinition -> {
+      final String name = beanDefinition.getName();
+      if (namesInBatch.contains(name)) {
+        throw new IllegalStateException("Duplicate bean name: " + name);
+      }
+      namesInBatch.add(name);
+    });
   }
 
 }
