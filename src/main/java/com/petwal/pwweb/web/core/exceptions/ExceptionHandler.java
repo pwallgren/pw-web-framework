@@ -7,15 +7,12 @@ public class ExceptionHandler {
   private ExceptionHandler() {
   }
 
-  public static HttpResponse handle(Exception ex) {
-    if (ex instanceof BadRequestException) {
-      return HttpResponse.badRequest().build();
-    } else if (ex instanceof NotFoundException) {
-      return HttpResponse.notFound().build();
-    } else if (ex instanceof InternalErrorException) {
-      return HttpResponse.internalError().build();
-    } else {
-      return HttpResponse.internalError().build();
-    }
+  public static HttpResponse handle(final Exception ex) {
+    return switch (ex) {
+      case BadRequestException ignored -> HttpResponse.badRequest().build();
+      case NotFoundException ignored -> HttpResponse.notFound().build();
+      case InternalErrorException ignored -> HttpResponse.internalError().build();
+      case null, default -> HttpResponse.internalError().build();
+    };
   }
 }

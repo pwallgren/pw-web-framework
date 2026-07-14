@@ -5,9 +5,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,9 +17,11 @@ import java.util.Set;
 public class BeanContext {
 
   private final Map<String, Object> beans;
+  private final Map<String, BeanDefinition> definitions;
 
   public BeanContext() {
-    beans = new HashMap<>();
+    beans = new LinkedHashMap<>();
+    definitions = new LinkedHashMap<>();
   }
 
   public <T> T getBean(final String qualifier) {
@@ -45,6 +49,14 @@ public class BeanContext {
     registerBeans(BeanScanner.scan(basePackage));
   }
 
+  public void close() {
+    final List<String> names = new ArrayList<>(beans.keySet());
+    Collections.reverse(names);
+    names.forEach(name -> definitions.get(name)
+        .getPreDestroy()
+        .run(beans.get(name)));
+  }
+
   private Object resolve(final BeanDefinition beanDefinition,
       final List<BeanDefinition> beanDefinitions, final Deque<String> resolutionPath) {
 
@@ -62,7 +74,9 @@ public class BeanContext {
     try {
       final Object[] args = resolveArguments(beanDefinition, beanDefinitions, resolutionPath);
       final Object bean = beanDefinition.instantiate(args);
+      beanDefinition.getPostConstruct().run(bean);
       beans.put(key, bean);
+      definitions.put(key, beanDefinition);
       return bean;
     } catch (InvocationTargetException e) {
       throw new RuntimeException("Bean factory threw an exception for '" + key + "'", e.getCause());

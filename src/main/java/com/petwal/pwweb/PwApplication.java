@@ -25,6 +25,7 @@ public class PwApplication {
   }
 
   public PwApplication start() {
+    Runtime.getRuntime().addShutdownHook(new Thread(beanContext::close, "pw-web-shutdown-hook"));
     server.start();
     return this;
   }
