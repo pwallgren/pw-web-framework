@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.petwal.pwweb.context.core.BeanContext;
 import com.petwal.pwweb.web.core.exceptions.ExceptionHandler;
-import com.petwal.pwweb.web.core.exceptions.NotFoundException;
 import com.petwal.pwweb.web.core.filter.FilterChain;
 import com.petwal.pwweb.web.core.filter.FilterChainBuilder;
 import com.petwal.pwweb.web.core.filter.FilterRegistry;
@@ -19,13 +18,16 @@ import com.petwal.pwweb.web.core.route.RouteRegistry;
 import com.petwal.pwweb.web.http.HttpRequest;
 import com.petwal.pwweb.web.http.HttpRequestParser;
 import com.petwal.pwweb.web.http.HttpResponse;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.net.Socket;
-import java.util.List;
 
 public class Dispatcher {
 
