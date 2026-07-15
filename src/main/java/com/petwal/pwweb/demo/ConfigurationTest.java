@@ -3,6 +3,8 @@ package com.petwal.pwweb.demo;
 import com.petwal.pwweb.context.annotation.PwBean;
 import com.petwal.pwweb.context.annotation.PwConfiguration;
 import com.petwal.pwweb.context.annotation.PwNamed;
+import com.petwal.pwweb.web.core.filter.PwAuthenticator;
+import java.util.Optional;
 
 @PwConfiguration
 public class ConfigurationTest {
@@ -21,6 +23,15 @@ public class ConfigurationTest {
   public TestController testController(
       final @PwNamed(name = "testService2") TestService testService) {
     return new TestController(testService);
+  }
+
+  @PwBean
+  public PwAuthenticator authenticator() {
+    return (requestContext) -> {
+      // Add authentication code
+      // Then return empty if not authenticated, otherwise the principal
+      return Optional.of("Authenticated User");
+    };
   }
 
 }

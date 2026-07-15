@@ -13,11 +13,13 @@ import com.petwal.pwweb.web.core.filter.FilterChain;
 import com.petwal.pwweb.web.core.filter.FilterChainBuilder;
 import com.petwal.pwweb.web.core.filter.FilterRegistry;
 import com.petwal.pwweb.web.core.filter.PwFilter;
+import com.petwal.pwweb.web.core.route.RequestContext;
 import com.petwal.pwweb.web.core.route.RouteEntry;
 import com.petwal.pwweb.web.core.route.RouteRegistry;
 import com.petwal.pwweb.web.http.HttpRequest;
 import com.petwal.pwweb.web.http.HttpRequestParser;
 import com.petwal.pwweb.web.http.HttpResponse;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +58,12 @@ public class Dispatcher {
       outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
       final HttpRequest request = HttpRequestParser.parse(inputStream);
-      final HttpResponse response = filterChain.next(request);
+      final Optional<RouteEntry> routeEntry = getMatchingRoute(request);
+      final RequestContext requestContext = RequestContext.builder()
+          .request(request)
+          .routeEntry(routeEntry.orElse(null))
+          .build();
+      final HttpResponse response = filterChain.next(requestContext);
       responseWriter.send(response, outputStream);
     } catch (Exception ex) {
       handleExceptions(ex, outputStream);
@@ -65,10 +72,12 @@ public class Dispatcher {
     }
   }
 
-  private HttpResponse dispatch(final HttpRequest request) {
+  private HttpResponse dispatch(final RequestContext requestContext) {
     try {
-      final RouteEntry routeEntry = getMatchingRoute(request);
-      return routeEntry.invokeHandler(request);
+      if (requestContext.getRouteEntry().isEmpty()) {
+        return HttpResponse.notFound().build();
+      }
+      return requestContext.invokeHandler();
     } catch (Exception ex) {
       return toErrorResponse(ex);
     }
@@ -78,12 +87,11 @@ public class Dispatcher {
     return routes;
   }
 
-  private RouteEntry getMatchingRoute(final HttpRequest request) {
+  private Optional<RouteEntry> getMatchingRoute(final HttpRequest request) {
     return routes.stream()
         .filter(entry -> entry.getHttpMethod() == request.getMethod())
         .filter(route -> route.getPattern().match(request.getPath()))
-        .findFirst()
-        .orElseThrow(() -> new NotFoundException("Handler method for request not found"));
+        .findFirst();
   }
 
   private HttpResponse toErrorResponse(final Exception exception) {

@@ -36,6 +36,8 @@ public class RouteRegistry {
               final PwPath pathAnnotation = parameter.getAnnotation(PwPath.class);
               final PwQuery queryAnnotation = parameter.getAnnotation(PwQuery.class);
               final PwBody bodyAnnotation = parameter.getAnnotation(PwBody.class);
+              final PwPrincipal principalAnnotation = parameter.getAnnotation(PwPrincipal.class);
+
               if (pathAnnotation != null) {
                 final String name = pathAnnotation.value().isEmpty()
                     ? parameter.getName()
@@ -48,13 +50,17 @@ public class RouteRegistry {
                 methodArgumentList.add(MethodArgument.query(name, parameter.getType()));
               } else if (bodyAnnotation != null) {
                 methodArgumentList.add(MethodArgument.body(parameter.getType(), objectMapper));
-              } else if (parameter.getType().equals(HttpRequest.class)) {
+              } else if (principalAnnotation != null) {
+                methodArgumentList.add(MethodArgument.principal(parameter.getType()));
+              }
+              else if (parameter.getType().equals(HttpRequest.class)) {
                 methodArgumentList.add(MethodArgument.request());
               } else {
                 throw new IllegalStateException("Unsupported parameter: " + parameter);
               }
             }
 
+            final boolean requireAuth = method.isAnnotationPresent(PwAuthenticated.class);
             final String controllerPath = trimLeadingAndTrailingSlashes(controller.path());
             final String routePath = trimLeadingAndTrailingSlashes(route.path());
             final String fullPath = String.format("/%s/%s", controllerPath, routePath);
@@ -63,6 +69,7 @@ public class RouteRegistry {
                 .httpMethod(route.method())
                 .uri(new RoutePattern(fullPath))
                 .handlerMethod(HandlerMethod.of(instance, method, methodArgumentList))
+                .requireAuth(requireAuth)
                 .build());
           }
         }

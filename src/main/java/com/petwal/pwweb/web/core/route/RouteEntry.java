@@ -13,11 +13,13 @@ public class RouteEntry {
   private final HttpMethod httpMethod;
   private final RoutePattern pattern;
   private final HandlerMethod handlerMethod;
+  private final Boolean requireAuth;
 
   public RouteEntry(final Builder builder) {
     this.httpMethod = notNull("httpMethod", builder.httpMethod);
     this.pattern = notNull("pattern", builder.pattern);
     this.handlerMethod = notNull("handlerMethod", builder.handlerMethod);
+    this.requireAuth = notNull("requireAuth", builder.requireAuth);
   }
 
   public HttpMethod getHttpMethod() {
@@ -28,9 +30,14 @@ public class RouteEntry {
     return pattern;
   }
 
-  public HttpResponse invokeHandler(final HttpRequest request) throws Exception {
+  public HttpResponse invokeHandler(final RequestContext requestContext) throws Exception {
+    final HttpRequest request = requestContext.getRequest();
     final Map<String, String> pathParams = pattern.getParamMappings(request.getPath());
-    return handlerMethod.invoke(request, pathParams);
+    return handlerMethod.invoke(requestContext, pathParams);
+  }
+
+  public Boolean requireAuth() {
+    return requireAuth;
   }
 
   public static Builder builder() {
@@ -42,6 +49,7 @@ public class RouteEntry {
     private HttpMethod httpMethod;                  // GET, POST, etc.
     private RoutePattern pattern;               // the compiled pattern
     private HandlerMethod handlerMethod;
+    private Boolean requireAuth;
 
     public Builder httpMethod(final HttpMethod httpMethod) {
       this.httpMethod = httpMethod;
@@ -55,6 +63,11 @@ public class RouteEntry {
 
     public Builder handlerMethod(final HandlerMethod handlerMethod) {
       this.handlerMethod = handlerMethod;
+      return this;
+    }
+
+    public Builder requireAuth(final boolean requireAuth) {
+      this.requireAuth = requireAuth;
       return this;
     }
 

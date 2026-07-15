@@ -30,14 +30,17 @@ public class HandlerMethod {
     return new HandlerMethod(instance, method, parameters);
   }
 
-  public HttpResponse invoke(final HttpRequest request, final Map<String, String> pathParams)
+  public HttpResponse invoke(final RequestContext requestContext, final Map<String, String> pathParams)
       throws Exception {
-    final List<Object> arguments = getArguments(request, pathParams);
+    final List<Object> arguments = getArguments(requestContext, pathParams);
     return (HttpResponse) method.invoke(instance, arguments.toArray());
   }
 
-  private List<Object> getArguments(final HttpRequest request,
+  private List<Object> getArguments(final RequestContext requestContext,
       final Map<String, String> pathParams) {
+
+    final HttpRequest request = requestContext.getRequest();
+
     final Map<String, String> queryParams = request.getQueryParams();
     return methodArguments.stream()
         .map(methodArgument -> {
@@ -49,7 +52,10 @@ public class HandlerMethod {
                 .map(body -> toObject(methodArgument, body))
                 .orElse(null);
           }
-
+          if(methodArgument.isPrincipal()) {
+            return requestContext.getPrincipal()
+                .orElse(null);
+          }
           String value = null;
           if (methodArgument.isQuery()) {
             value = queryParams.get(methodArgument.getName());
