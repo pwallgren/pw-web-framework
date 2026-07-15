@@ -9,6 +9,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.petwal.pwweb.context.core.BeanContext;
 import com.petwal.pwweb.web.core.exceptions.ExceptionHandler;
 import com.petwal.pwweb.web.core.exceptions.NotFoundException;
+import com.petwal.pwweb.web.core.filter.FilterChain;
+import com.petwal.pwweb.web.core.filter.FilterChainBuilder;
+import com.petwal.pwweb.web.core.filter.FilterRegistry;
+import com.petwal.pwweb.web.core.filter.PwFilter;
 import com.petwal.pwweb.web.core.route.RouteEntry;
 import com.petwal.pwweb.web.core.route.RouteRegistry;
 import com.petwal.pwweb.web.http.HttpRequest;
@@ -27,16 +31,21 @@ public class Dispatcher {
 
   private final List<RouteEntry> routes;
   private final ResponseWriter responseWriter;
+  private final FilterChain filterChain;
 
   public Dispatcher(final BeanContext beanContext) {
-    final ObjectMapper objectMapper = createDefaultMapper(); // Use bean for this bad boy that can be overwritten
+    final ObjectMapper objectMapper = createDefaultMapper();
     this.routes = RouteRegistry.register(beanContext, objectMapper);
     this.responseWriter = new ResponseWriter(objectMapper);
+    final List<PwFilter> registeredFilters = FilterRegistry.register(beanContext);
+    this.filterChain = FilterChainBuilder.build(registeredFilters, this::dispatch);
   }
 
   public Dispatcher(final BeanContext beanContext, final ObjectMapper objectMapper) {
     this.routes = RouteRegistry.register(beanContext, objectMapper);
     this.responseWriter = new ResponseWriter(objectMapper);
+    final List<PwFilter> registeredFilters = FilterRegistry.register(beanContext);
+    this.filterChain = FilterChainBuilder.build(registeredFilters, this::dispatch);
   }
 
   public void handle(final Socket socket) {
@@ -47,13 +56,21 @@ public class Dispatcher {
       outputStream = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
       final HttpRequest request = HttpRequestParser.parse(inputStream);
-      final RouteEntry routeEntry = getMatchingRoute(request);
-      final HttpResponse response = routeEntry.invokeHandler(request);
+      final HttpResponse response = filterChain.next(request);
       responseWriter.send(response, outputStream);
     } catch (Exception ex) {
       handleExceptions(ex, outputStream);
     } finally {
       closeStreams(inputStream, outputStream, socket);
+    }
+  }
+
+  private HttpResponse dispatch(final HttpRequest request) {
+    try {
+      final RouteEntry routeEntry = getMatchingRoute(request);
+      return routeEntry.invokeHandler(request);
+    } catch (Exception ex) {
+      return toErrorResponse(ex);
     }
   }
 
@@ -69,10 +86,14 @@ public class Dispatcher {
         .orElseThrow(() -> new NotFoundException("Handler method for request not found"));
   }
 
-  private void handleExceptions(final Exception exception, final BufferedWriter outputStream) {
+  private HttpResponse toErrorResponse(final Exception exception) {
     LOGGER.error("Exception encountered", exception);
+    return ExceptionHandler.handle(exception);
+  }
+
+  private void handleExceptions(final Exception exception, final BufferedWriter outputStream) {
     try {
-      responseWriter.send(ExceptionHandler.handle(exception), outputStream);
+      responseWriter.send(toErrorResponse(exception), outputStream);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

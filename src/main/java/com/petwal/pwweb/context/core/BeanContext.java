@@ -39,6 +39,14 @@ public class BeanContext {
         .toList();
   }
 
+  public <T> List<T> getBeansOfType(final Class<T> type) {
+    return beans.values()
+        .stream()
+        .filter(type::isInstance)
+        .map(type::cast)
+        .toList();
+  }
+
   public void registerBeans(final List<BeanDefinition> beanDefinitions) {
     validateUniqueNames(beanDefinitions);
     beanDefinitions
