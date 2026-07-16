@@ -24,7 +24,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sshagent(credentials: ['deploy-ssh-key']) {
+                sshagent(credentials: ['jenkins_deploy_key']) {
                     sh '''
                         ssh -o StrictHostKeyChecking=no user@target-host \
                             "echo 'Deployed by Jenkins at' \$(date) > /tmp/jenkins-deploy-test.txt && cat /tmp/jenkins-deploy-test.txt"
