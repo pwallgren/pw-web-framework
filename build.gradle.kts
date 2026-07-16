@@ -7,11 +7,15 @@ plugins {
 group = "com.petwal"
 version = "1.0"
 
+val reposiliteUrl: String? = findProperty("reposiliteUrl") as String? ?: System.getenv("REPOSILITE_URL")
+
 repositories {
     mavenCentral()
-    maven {
-        url = uri("http://192.168.0.22:8080/releases")
-        isAllowInsecureProtocol = true
+    if (reposiliteUrl != null) {
+        maven {
+            url = uri("$reposiliteUrl/releases")
+            isAllowInsecureProtocol = true
+        }
     }
 }
 
@@ -39,20 +43,22 @@ publishing {
         }
     }
     repositories {
-        maven {
-            name = "reposilite"
-            url = uri(
-                if (version.toString().endsWith("-SNAPSHOT")) {
-                    "http://pw-pi-1:8080/snapshots"
-                } else {
-                    "http://pw-pi-1:8080/releases"
+        if (reposiliteUrl != null) {
+            maven {
+                name = "reposilite"
+                url = uri(
+                    if (version.toString().endsWith("-SNAPSHOT")) {
+                        "$reposiliteUrl/snapshots"
+                    } else {
+                        "$reposiliteUrl/releases"
+                    }
+                )
+                credentials {
+                    username = findProperty("reposiliteUser") as String? ?: System.getenv("REPOSILITE_USER")
+                    password = findProperty("reposilitePassword") as String? ?: System.getenv("REPOSILITE_PASSWORD")
                 }
-            )
-            credentials {
-                username = findProperty("reposiliteUser") as String? ?: System.getenv("REPOSILITE_USER")
-                password = findProperty("reposilitePassword") as String? ?: System.getenv("REPOSILITE_PASSWORD")
+                isAllowInsecureProtocol = true
             }
-            isAllowInsecureProtocol = true
         }
     }
 }
