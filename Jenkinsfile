@@ -21,6 +21,17 @@ pipeline {
                 echo 'Test step placeholder — replace with your real test command.'
             }
         }
+
+        stage('Deploy') {
+            steps {
+                sshagent(credentials: ['deploy-ssh-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no user@target-host \
+                            "echo 'Deployed by Jenkins at' \$(date) > /tmp/jenkins-deploy-test.txt && cat /tmp/jenkins-deploy-test.txt"
+                    '''
+                }
+            }
+        }
     }
  
     post {
