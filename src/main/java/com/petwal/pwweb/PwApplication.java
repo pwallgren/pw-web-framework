@@ -73,7 +73,6 @@ public class PwApplication {
 
       return new PwApplication(beanContext, new Server(port, dispatcher));
     }
-
   }
 }
 
