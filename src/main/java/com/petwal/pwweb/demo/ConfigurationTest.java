@@ -21,8 +21,8 @@ public class ConfigurationTest {
 
   @PwBean
   public TestController testController(
-      final @PwNamed(name = "testService2") TestService testService) {
-    return new TestController(testService);
+      final @PwNamed(name = "testService2") TestService testService, final Test test) {
+    return new TestController(testService, test);
   }
 
   @PwBean

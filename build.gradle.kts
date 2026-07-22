@@ -34,6 +34,7 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.5.38")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.19.1")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.0")
 }
 
 publishing {

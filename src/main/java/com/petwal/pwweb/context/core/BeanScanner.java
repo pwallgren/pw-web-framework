@@ -1,11 +1,19 @@
 package com.petwal.pwweb.context.core;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.petwal.pwweb.context.annotation.PwBean;
 import com.petwal.pwweb.context.annotation.PwComponent;
 import com.petwal.pwweb.context.annotation.PwConfiguration;
 import com.petwal.pwweb.context.annotation.PwInject;
 import com.petwal.pwweb.context.annotation.PwPostConstruct;
 import com.petwal.pwweb.context.annotation.PwPreDestroy;
+import com.petwal.pwweb.context.annotation.PwProperties;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -13,16 +21,19 @@ import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nonnull;
 import org.reflections.Reflections;
 
 public class BeanScanner {
+
+  private static final String APPLICATION_YAML = "application.yaml";
 
   public static List<BeanDefinition> scan(final String basePackage) {
     final Reflections reflections = new Reflections(basePackage);
 
     final List<BeanDefinition> beanDefinitions = new ArrayList<>();
+    beanDefinitions.addAll(scanProperties(reflections));
     beanDefinitions.addAll(scanConfigurations(reflections));
     beanDefinitions.addAll(scanComponents(reflections));
     return beanDefinitions;
@@ -81,7 +92,62 @@ public class BeanScanner {
     return beanDefinitions;
   }
 
-  @Nonnull
+  private static List<BeanDefinition> scanProperties(final Reflections reflections) {
+    final List<BeanDefinition> beanDefinitions = new ArrayList<>();
+
+    final Set<Class<?>> propertiesClasses = reflections.getTypesAnnotatedWith(PwProperties.class);
+    if (propertiesClasses.isEmpty()) {
+      return beanDefinitions;
+    }
+
+    final ObjectMapper mapper = new ObjectMapper(new YAMLFactory())
+        .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+    final Map<String, Object> root = loadApplicationYaml(mapper);
+
+    for (final Class<?> clazz : propertiesClasses) {
+      final PwProperties properties = clazz.getAnnotation(PwProperties.class);
+      final String prefix = properties.prefix();
+
+      final Object node = resolvePrefix(root, prefix);
+      final Object instance = mapper.convertValue(node, clazz);
+      final BeanInstantiator instantiator = args -> instance;
+
+      final BeanLifecycleProcedure postConstruct = resolvePostConstructProcedure(clazz);
+      final BeanLifecycleProcedure preDestroy = resolvePreDestroyProcedure(clazz);
+
+      beanDefinitions.add(buildBeanDefinition(clazz.getName(), new Parameter[0], instantiator,
+          postConstruct, preDestroy));
+    }
+    return beanDefinitions;
+  }
+
+  private static Map<String, Object> loadApplicationYaml(final ObjectMapper mapper) {
+    try (final InputStream input =
+        BeanScanner.class.getClassLoader().getResourceAsStream(APPLICATION_YAML)) {
+      if (input == null) {
+        throw new IllegalStateException(
+            "@PwProperties class found but no " + APPLICATION_YAML + " on classpath");
+      }
+      return mapper.readValue(input, new TypeReference<>() {});
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to read " + APPLICATION_YAML, e);
+    }
+  }
+
+  private static Object resolvePrefix(final Map<String, Object> root, final String prefix) {
+    Object node = root;
+    if (!prefix.isEmpty()) {
+      final Map<String, Object> map = (Map<String, Object>) node;
+      for (final String segment : prefix.split("\\.")) {
+        if (!map.containsKey(segment)) {
+          throw new IllegalStateException("No configuration found for prefix '" + prefix + "'");
+        }
+        node = map.get(segment);
+      }
+    }
+    return node;
+  }
+
   private static BeanDefinition buildBeanDefinition(final String name,
       final Parameter[] parameters,
       final BeanInstantiator instantiator, final BeanLifecycleProcedure postConstruct,

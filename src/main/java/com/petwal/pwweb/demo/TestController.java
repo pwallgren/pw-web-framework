@@ -17,7 +17,7 @@ public class TestController {
 
   private final TestService testService;
 
-  public TestController(final TestService testService) {
+  public TestController(final TestService testService, final Test test) {
     this.testService = testService;
   }
 
